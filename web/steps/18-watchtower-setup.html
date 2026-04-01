@@ -1,0 +1,61 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 18: Watchtower — Otomatik Konteyner Güncelleme
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">18</div>
+        <div>
+            <h2>Watchtower — Otomatik Güncelleme</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Docker image güncellemelerini otomatik algıla ve uygula
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--success); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🔄 Watchtower, çalışan konteynerlerin base image'larını periyodik olarak kontrol eder.
+            Yeni sürüm tespit edildiğinde konteyneri durdurur, yeni image'ı çeker ve aynı
+            yapılandırmayla yeniden başlatır. Bu, stack'teki son konteynerdir.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">watchtower</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">—</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">📊 İzleme</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step18-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step18-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('18', this)" id="step18-deploy-btn">
+            🚀 Watchtower Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep18() { console.log('[Step 18] Watchtower setup sayfası yüklendi — son konteyner.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep18); } else { initStep18(); }
+</script>

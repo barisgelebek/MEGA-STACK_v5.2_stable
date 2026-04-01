@@ -1,0 +1,60 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 10: Nginx Sites — Statik Web Sitesi Sunucusu
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">10</div>
+        <div>
+            <h2>Nginx Sites — Web Sunucusu</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Çoklu domain statik site sunucusu — Traefik arkasında reverse-proxy
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--primary); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🌐 Her domain için ayrı vhost yapılandırması <code>nginx/vhosts/</code> altında oluşturulur.
+            Statik dosyalar <code>web/</code> dizininden sunulur. Traefik TLS terminasyonunu yönetir.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">nginx-sites</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">80</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">⚙️ Uygulama</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step10-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step10-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('10', this)" id="step10-deploy-btn">
+            🚀 Nginx Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep10() { console.log('[Step 10] Nginx Sites setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep10); } else { initStep10(); }
+</script>

@@ -1,0 +1,555 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 02: Global DNS & Domain Config — Domain/IP, Type A/B, DNS Export
+     BIND Master Export Engine — Cloudflare uyumlu .txt çıktı
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">02</div>
+        <div>
+            <h2>Domain & DNS Yapılandırması</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Ana domain, Sunucu IP, Domain Tipi seçimi, Cloudflare BIND Export
+            </p>
+        </div>
+    </div>
+
+    <!-- DNS Bilgi Kutusu -->
+    <div class="info-box" style="margin-bottom:20px;">
+        <span class="info-icon">🔐</span>
+        <div>
+            <strong>Cloudflare SSL: Full (Strict) Modu</strong>
+            <p style="font-size:0.8rem; margin-top:4px;">
+                Cloudflare Dashboard → SSL/TLS → Mod = <strong>Full (Strict)</strong> olarak ayarlandığından emin olun.
+                Traefik Let's Encrypt sertifikaları bu modda doğru çalışır.
+            </p>
+        </div>
+    </div>
+
+    <!-- Ana Domain -->
+    <div class="form-group">
+        <label for="step02-domain">Ana Domain</label>
+        <input type="text" id="step02-domain" placeholder="example.com"
+            oninput="step02OnFieldChange(); step02ValidateDomainLive(this)">
+        <div class="form-hint">Sisteminizin ana domain adresi (örn: barisgelebek.com). IP adresi de kabul edilir.</div>
+    </div>
+
+    <!-- Sunucu IP Adresi -->
+    <div class="form-group">
+        <label for="step02-server-ip">Sunucu IP Adresi</label>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="step02-server-ip" placeholder="194.163.163.239" style="flex:1;"
+                oninput="step02OnFieldChange(); step02ValidateIPLive(this)">
+            <button class="btn btn-secondary" id="step02-detect-ip-btn" onclick="step02DetectIP()"
+                style="white-space:nowrap; min-width:160px;">
+                🔍 Otomatik Algıla
+            </button>
+        </div>
+        <div class="form-hint">Sunucunuzun dış IP adresi. Tüm DNS A kayıtları bu IP'ye yönlendirilir.</div>
+    </div>
+
+    <!-- Domain Tipi -->
+    <div class="form-group">
+        <label>Domain Tipi</label>
+        <div class="domain-type-grid">
+            <div class="domain-type-card selected" id="step02-type-static" onclick="step02SelectType('static')">
+                <div class="type-icon">🌐</div>
+                <div class="type-title">Type A: Static</div>
+                <div class="type-desc">Nginx üzerinden statik HTML/CSS içerik sunumu</div>
+                <span class="badge badge--healthy" style="margin-top:10px;">Önerilen</span>
+            </div>
+            <div class="domain-type-card" id="step02-type-app" onclick="step02SelectType('app')">
+                <div class="type-icon">⚡</div>
+                <div class="type-title">Type B: App</div>
+                <div class="type-desc">Docker container deployment & Traefik proxy</div>
+            </div>
+        </div>
+        <input type="hidden" id="step02-type-value" value="static">
+        <div class="form-hint" style="margin-top:8px;">
+            <strong>Static:</strong> web/ dizinine yönlendirme &nbsp;|&nbsp;
+            <strong>App:</strong> Container deployment + proxy eşleşmesi
+        </div>
+    </div>
+
+    <!-- SSL Modu -->
+    <div class="form-group">
+        <label for="step02-ssl-mode">SSL Modu</label>
+        <select id="step02-ssl-mode" onchange="step02OnFieldChange()">
+            <option value="full_strict" selected>Full (Strict) — Önerilen</option>
+            <option value="full">Full</option>
+            <option value="flexible">Flexible</option>
+        </select>
+        <div class="form-hint">Cloudflare'deki SSL modunuzla eşleşmeli.</div>
+    </div>
+
+    <!-- Cloudflare Zone ID -->
+    <div class="form-group">
+        <label for="step02-cf-zone">Cloudflare Zone ID (Opsiyonel)</label>
+        <input type="text" id="step02-cf-zone" placeholder="32 haneli hex (örn: a1b2c3d4...)" maxlength="32"
+            oninput="step02OnFieldChange()">
+        <div class="form-hint">DNS import dosyası üretmek için. Cloudflare Dashboard → Overview → sağ alt köşe.</div>
+    </div>
+
+    <!-- ═══════ DNS BIND Export Panel ═══════ -->
+    <div id="step02-dns-panel" style="display:none; margin-top:24px;">
+
+        <!-- DNS Preview Header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:1rem; color:var(--text-primary);">
+                📄 DNS Kayıt Önizleme <span id="step02-dns-record-count"
+                    style="font-size:0.8rem; color:var(--text-muted);"></span>
+            </h3>
+            <button class="btn btn-secondary" id="step02-dns-download-btn" onclick="step02DownloadBIND()"
+                style="font-size:0.8rem; padding:6px 14px;">
+                ⬇️ DNS Yapılandırmasını İndir (.txt)
+            </button>
+        </div>
+
+        <!-- DKIM Status Badge -->
+        <div id="step02-dkim-badge" style="font-size:0.78rem; color:var(--text-muted); margin-bottom:10px; padding:6px 12px;
+                   background:var(--bg-secondary); border-radius:6px; display:inline-block;">
+            ⏳ DKIM anahtarı — Step 09 (iRedMail) sonrası otomatik güncellenecek
+        </div>
+
+        <!-- DNS Preview Code Block -->
+        <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px;
+                    max-height:320px; overflow-y:auto; font-family:'JetBrains Mono', 'Fira Code', monospace;
+                    font-size:0.72rem; line-height:1.5; padding:14px; white-space:pre; color:var(--text-secondary);"
+            id="step02-dns-preview"></div>
+
+        <!-- Cloudflare Import Onayı -->
+        <div style="margin-top:16px; padding:14px 16px; background:var(--bg-secondary); border:1px solid var(--border-color);
+                    border-radius:8px; display:flex; align-items:flex-start; gap:10px;">
+            <input type="checkbox" id="step02-dns-confirm" onchange="step02UpdateSaveState()"
+                style="margin-top:3px; width:18px; height:18px; accent-color:var(--accent-primary); cursor:pointer;">
+            <label for="step02-dns-confirm"
+                style="cursor:pointer; font-size:0.85rem; line-height:1.5; color:var(--text-primary);">
+                <strong>Cloudflare DNS import işlemini tamamladım.</strong><br>
+                <span style="color:var(--text-muted); font-size:0.78rem;">
+                    Yukarıdaki .txt dosyasını Cloudflare Dashboard → DNS → Records → Import and Export → Import DNS
+                    records
+                    bölümünden yükledim ve kayıtlar aktif durumda.
+                </span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Butonlar -->
+    <div class="step-actions">
+        <button class="btn btn-secondary" onclick="WizardCore.goToStep(1)">
+            ← Önceki
+        </button>
+        <button class="btn btn-primary" id="step02-save-btn" onclick="step02Save()" disabled>
+            Kaydet & Devam →
+        </button>
+    </div>
+</div>
+
+<script>
+    /* ═══════════════════════════════════════════════════════════════════
+       Step 02 — DNS & Domain Config Engine
+       ═══════════════════════════════════════════════════════════════════ */
+
+    // ── MEGA-STACK Subdomain Haritalama (servis → subdomain) ──
+    const STEP02_SUBDOMAIN_MAP = [
+        { subdomain: 'api', service: 'core-api', desc: 'Core API endpoint' },
+        { subdomain: 'auth', service: 'authelia', desc: 'Authelia SSO' },
+        { subdomain: 'dashboard', service: 'dashboard', desc: 'Web Dashboard' },
+        { subdomain: 'db', service: 'cloudbeaver', desc: 'CloudBeaver DB UI' },
+        { subdomain: 'logs', service: 'dozzle', desc: 'Dozzle Log Viewer' },
+        { subdomain: 'mail', service: 'iredmail', desc: 'iRedMail Server' },
+        { subdomain: 'monitor', service: 'netdata', desc: 'Netdata Monitoring' },
+        { subdomain: 'portainer', service: 'portainer', desc: 'Portainer CE' },
+        { subdomain: 'status', service: 'uptime-kuma', desc: 'Uptime Kuma' },
+        { subdomain: 'traefik', service: 'traefik', desc: 'Traefik Dashboard' },
+    ];
+
+    // ── State Sync: Merkezi state'ten oku/yaz ──
+    function step02ReadState() {
+        return WizardCore.getState().network || {};
+    }
+
+    function step02WriteState(partial) {
+        WizardCore.setNetworkState(partial);
+    }
+
+    // ── Init ──
+    function initStep02() {
+        // 1) Sunucu IP'sini otomatik algıla (arka planda)
+        step02DetectIP(true);
+
+        // 2) Mevcut domain config varsa yükle (API'den)
+        WizardAPI.getDomainConfig().then(result => {
+            if (result.success) {
+                const d = result.data;
+                document.getElementById('step02-domain').value = d.domain || '';
+                document.getElementById('step02-ssl-mode').value = d.ssl_mode || 'full_strict';
+                document.getElementById('step02-cf-zone').value = d.cloudflare_zone_id || '';
+                if (d.domain_type) step02SelectType(d.domain_type);
+
+                // Merkezi state güncelle
+                step02WriteState({
+                    domain: d.domain || '',
+                    domain_type: d.domain_type || 'static',
+                    ssl_mode: d.ssl_mode || 'full_strict',
+                    cf_zone_id: d.cloudflare_zone_id || '',
+                });
+            }
+        });
+
+        // 3) Merkezi state'ten varsa IP doldur
+        const ns = step02ReadState();
+        if (ns.server_ip) {
+            document.getElementById('step02-server-ip').value = ns.server_ip;
+        }
+        if (ns.dns_confirmed) {
+            document.getElementById('step02-dns-confirm').checked = true;
+        }
+
+        // 4) Önizleme güncelle
+        step02RefreshPreview();
+        step02UpdateSaveState();
+    }
+
+    // ── Field Change Handler: DOM → Merkezi State ──
+    function step02OnFieldChange() {
+        step02WriteState({
+            domain: document.getElementById('step02-domain').value.trim().toLowerCase(),
+            server_ip: document.getElementById('step02-server-ip').value.trim(),
+            domain_type: document.getElementById('step02-type-value').value,
+            ssl_mode: document.getElementById('step02-ssl-mode').value,
+            cf_zone_id: document.getElementById('step02-cf-zone').value.trim(),
+        });
+        step02RefreshPreview();
+        step02UpdateSaveState();
+    }
+
+    // ── Domain Type Select ──
+    function step02SelectType(type) {
+        document.getElementById('step02-type-value').value = type;
+        document.getElementById('step02-type-static').classList.toggle('selected', type === 'static');
+        document.getElementById('step02-type-app').classList.toggle('selected', type === 'app');
+        step02OnFieldChange();
+    }
+
+    // ── Live Validation ──
+    function step02ValidateDomainLive(input) {
+        const result = WizardValidation.validateDomain(input.value);
+        if (input.value.length > 2) {
+            if (result.valid) {
+                WizardValidation.clearFieldError(input);
+                input.style.borderColor = 'var(--health-green)';
+            } else {
+                input.style.borderColor = 'var(--health-red)';
+            }
+        } else {
+            input.style.borderColor = '';
+        }
+    }
+
+    function step02ValidateIPLive(input) {
+        if (input.value.length > 6) {
+            if (WizardValidation.PATTERNS.ipv4.test(input.value.trim())) {
+                WizardValidation.clearFieldError(input);
+                input.style.borderColor = 'var(--health-green)';
+            } else {
+                input.style.borderColor = 'var(--health-red)';
+            }
+        } else {
+            input.style.borderColor = '';
+        }
+    }
+
+    // ── Server IP Auto-Detect ──
+    async function step02DetectIP(silent) {
+        const btn = document.getElementById('step02-detect-ip-btn');
+        const input = document.getElementById('step02-server-ip');
+
+        if (!silent) {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;"></div> Algılanıyor...';
+        }
+
+        try {
+            const result = await WizardAPI.request('/api/dns/server-ip');
+            if (result.success && result.data.server_ip) {
+                // Sadece alan boşsa veya kullanıcı talep ettiyse doldur
+                if (!input.value.trim() || !silent) {
+                    input.value = result.data.server_ip;
+                    input.style.borderColor = 'var(--health-green)';
+                    step02OnFieldChange();
+                    if (!silent) WizardCore.showToast(`Sunucu IP algılandı: ${result.data.server_ip}`, 'success');
+                }
+            } else if (!silent) {
+                WizardCore.showToast('IP adresi algılanamadı — lütfen manuel girin.', 'warning');
+            }
+        } catch (_) {
+            if (!silent) WizardCore.showToast('IP algılama başarısız.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Otomatik Algıla';
+        }
+    }
+
+    // ── Save Button State (Checkbox Gate) ──
+    function step02UpdateSaveState() {
+        const ns = step02ReadState();
+        const domainOk = WizardValidation.validateDomain(
+            document.getElementById('step02-domain').value
+        ).valid;
+        const ipOk = WizardValidation.PATTERNS.ipv4.test(
+            (document.getElementById('step02-server-ip').value || '').trim()
+        );
+        const confirmed = document.getElementById('step02-dns-confirm').checked;
+
+        const btn = document.getElementById('step02-save-btn');
+
+        // DNS panel: domain + IP geçerliyse göster
+        const panel = document.getElementById('step02-dns-panel');
+        if (domainOk && ipOk) {
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
+        }
+
+        // Save butonu: tüm validasyonlar + onay kutusu gerekli
+        btn.disabled = !(domainOk && ipOk && confirmed);
+
+        // Onay state'i sakla
+        step02WriteState({ dns_confirmed: confirmed });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BIND Master Export Engine — Cloudflare uyumlu .txt üretici
+       ═══════════════════════════════════════════════════════════════════ */
+
+    function step02GenerateBIND() {
+        const ns = step02ReadState();
+        const domain = ns.domain;
+        const ip = ns.server_ip;
+        if (!domain || !ip) return '';
+
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const exportDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+            `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        // SOA serial: Unix timestamp'ten türet (Cloudflare stili)
+        const serial = Math.floor(now.getTime() / 1000);
+
+        const lines = [];
+
+        // ── Header ──
+        lines.push(';;');
+        lines.push(`;; Domain:     ${domain}.`);
+        lines.push(`;; Exported:   ${exportDate}`);
+        lines.push(';;');
+        lines.push(';; This file is intended for use for informational and archival');
+        lines.push(';; purposes ONLY and MUST be edited before use on a production');
+        lines.push(';; DNS server.  In particular, you must:');
+        lines.push(';;   -- update the SOA record with the correct authoritative name server');
+        lines.push(';;   -- update the SOA record with the contact e-mail address information');
+        lines.push(';;   -- update the NS record(s) with the authoritative name servers for this domain.');
+        lines.push(';;');
+        lines.push(';; For further information, please consult the BIND documentation');
+        lines.push(';; located on the following website:');
+        lines.push(';;');
+        lines.push(';; http://www.isc.org/');
+        lines.push(';;');
+        lines.push(';; And RFC 1035:');
+        lines.push(';;');
+        lines.push(';; http://www.ietf.org/rfc/rfc1035.txt');
+        lines.push(';;');
+        lines.push(';; Please note that we do NOT offer technical support for any use');
+        lines.push(';; of this zone data, the BIND name server, or any other third-party');
+        lines.push(';; DNS software.');
+        lines.push(';;');
+        lines.push(';; Use at your own risk.');
+
+        // ── SOA Record ──
+        lines.push(';; SOA Record');
+        lines.push(`${domain}\t3600\tIN\tSOA\tchloe.ns.cloudflare.com. dns.cloudflare.com. ${serial} 10000 2400 604800 3600`);
+        lines.push('');
+
+        // ── NS Records ──
+        lines.push(';; NS Records');
+        lines.push(`${domain}.\t86400\tIN\tNS\tchloe.ns.cloudflare.com.`);
+        lines.push(`${domain}.\t86400\tIN\tNS\tcleo.ns.cloudflare.com.`);
+        lines.push('');
+
+        // ── A Records (alfabetik sıralı) ──
+        lines.push(';; A Records');
+        const subdomains = STEP02_SUBDOMAIN_MAP
+            .map(s => s.subdomain)
+            .sort();
+
+        for (const sub of subdomains) {
+            lines.push(`${sub}.${domain}.\t1\tIN\tA\t${ip} ; cf_tags=cf-proxied:false`);
+        }
+        // Root domain A kaydı (alfabetik sırada yerine göre)
+        lines.push(`${domain}.\t1\tIN\tA\t${ip} ; cf_tags=cf-proxied:false`);
+        lines.push('');
+
+        // ── CNAME Records ──
+        lines.push(';; CNAME Records');
+        lines.push(`www.${domain}.\t1\tIN\tCNAME\t${domain}. ; cf_tags=cf-proxied:false`);
+        lines.push('');
+
+        // ── MX Records ──
+        lines.push(';; MX Records');
+        lines.push(`${domain}.\t1\tIN\tMX\t10 mail.${domain}.`);
+        lines.push('');
+
+        // ── TXT Records ──
+        lines.push(';; TXT Records');
+        lines.push(`${domain}.\t1\tIN\tTXT\t"v=spf1 ip4:${ip} -all"`);
+        // DKIM: Gerçek anahtar varsa kullan, yoksa placeholder
+        const dkimKey = window._step02DkimPublicKey || 'REPLACE_WITH_DKIM_PUBLIC_KEY_AFTER_IREDMAIL_SETUP';
+        lines.push(`dkim._domainkey.${domain}.\t1\tIN\tTXT\t"v=DKIM1; p=${dkimKey}"`);
+        lines.push(`_dmarc.${domain}.\t1\tIN\tTXT\t"v=DMARC1; p=quarantine; rua=mailto:postmaster@${domain}"`);
+
+        return lines.join('\n');
+    }
+
+    // ── DKIM Sync: Step 09 tamamlandıysa gerçek DKIM anahtarını çek ──
+    async function step02SyncDkimKey() {
+        try {
+            const ns = step02ReadState();
+            if (!ns.domain) return;
+            const res = await WizardAPI.getDkimKey(ns.domain);
+            if (res.success && res.data.available && res.data.dkim_public_key) {
+                window._step02DkimPublicKey = res.data.dkim_public_key;
+                step02RefreshPreview();
+                const badge = document.getElementById('step02-dkim-badge');
+                if (badge) {
+                    badge.textContent = '✅ DKIM anahtarı aktif';
+                    badge.style.color = 'var(--health-green, #4caf50)';
+                }
+            }
+        } catch (_) { /* sessiz — henüz kurulmamış olabilir */ }
+    }
+    // Step 02 yüklendiğinde DKIM kontrolü
+    step02SyncDkimKey();
+
+    // ── Preview Renderer ──
+    function step02RefreshPreview() {
+        const previewEl = document.getElementById('step02-dns-preview');
+        const countEl = document.getElementById('step02-dns-record-count');
+        if (!previewEl) return;
+
+        const ns = step02ReadState();
+        const domainOk = WizardValidation.validateDomain(ns.domain || '').valid;
+        const ipOk = WizardValidation.PATTERNS.ipv4.test(ns.server_ip || '');
+
+        if (!domainOk || !ipOk) {
+            previewEl.textContent = ';; Domain ve IP bilgileri girildikten sonra DNS kayıtları burada önizlenecektir.';
+            countEl.textContent = '';
+            return;
+        }
+
+        const bindContent = step02GenerateBIND();
+        previewEl.textContent = bindContent;
+
+        // Kayıt sayısı hesapla (yorum ve boş satırları hariç tut)
+        const recordCount = bindContent.split('\n')
+            .filter(l => l.trim() && !l.startsWith(';;') && !l.startsWith(';; '))
+            .length;
+        countEl.textContent = `(${recordCount} kayıt)`;
+    }
+
+    // ── Download BIND .txt ──
+    function step02DownloadBIND() {
+        const ns = step02ReadState();
+        const bindContent = step02GenerateBIND();
+        if (!bindContent) {
+            WizardCore.showToast('Önce domain ve IP bilgilerini girin.', 'warning');
+            return;
+        }
+
+        const blob = new Blob([bindContent], { type: 'text/plain; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cloudflare_import_${ns.domain}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        WizardCore.showToast(`DNS dosyası indirildi: cloudflare_import_${WizardCore.escapeHtml(ns.domain)}.txt`, 'success');
+    }
+
+    // ── Save & Continue ──
+    async function step02Save() {
+        const container = document.querySelector('#step02-save-btn').closest('.card');
+        const domainInput = document.getElementById('step02-domain');
+        const ipInput = document.getElementById('step02-server-ip');
+        const cfZoneInput = document.getElementById('step02-cf-zone');
+        const btn = document.getElementById('step02-save-btn');
+
+        WizardValidation.clearAllErrors(container);
+
+        // Merkezi state'ten oku
+        const ns = step02ReadState();
+
+        // Domain doğrulama
+        const domainCheck = WizardValidation.validateDomain(ns.domain);
+        if (!domainCheck.valid) {
+            WizardValidation.showFieldError(domainInput, domainCheck.error);
+            return;
+        }
+
+        // IP doğrulama
+        if (!WizardValidation.PATTERNS.ipv4.test(ns.server_ip)) {
+            WizardValidation.showFieldError(ipInput, 'Geçerli bir IPv4 adresi girin (örn: 194.163.163.239).');
+            return;
+        }
+
+        // Zone ID doğrulama (opsiyonel)
+        const cfCheck = WizardValidation.validateCfZoneId(ns.cf_zone_id || '');
+        if (!cfCheck.valid) {
+            WizardValidation.showFieldError(cfZoneInput, cfCheck.error);
+            return;
+        }
+
+        // Onay kutusu kontrolü
+        if (!document.getElementById('step02-dns-confirm').checked) {
+            WizardCore.showToast('Cloudflare DNS import onayını işaretleyin.', 'warning');
+            return;
+        }
+
+        // Loading
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Kaydediliyor...';
+
+        const config = {
+            domain: domainCheck.value,
+            domain_type: ns.domain_type || 'static',
+            ssl_mode: ns.ssl_mode || 'full_strict',
+            cloudflare_zone_id: cfCheck.value,
+        };
+
+        // 1) Domain config kaydet
+        const result = await WizardAPI.setDomainConfig(config);
+
+        // 2) Backend'te DNS dosyalarını da üret (JSON + CSV)
+        if (result.success) {
+            await WizardAPI.request('/api/dns/generate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    domain: domainCheck.value,
+                    server_ip: ns.server_ip,
+                    domain_type: ns.domain_type || 'static',
+                }),
+            });
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = 'Kaydet & Devam →';
+
+        if (result.success) {
+            WizardCore.showToast('Step 02 initialized successfully — Domain & DNS yapılandırması kaydedildi.', 'success');
+            setTimeout(() => WizardCore.nextStep(), 800);
+        } else {
+            WizardCore.showToast(result.error || 'Domain kaydı başarısız.', 'error');
+        }
+    }
+</script>

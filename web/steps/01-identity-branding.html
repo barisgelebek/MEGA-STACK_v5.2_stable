@@ -1,0 +1,134 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 01: Identity & Branding — Brand Name, System Name, Logo & Tema
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">01</div>
+        <div>
+            <h2>Kimlik & Marka Ayarları</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                White-label yapılandırma — Logo, İsim ve Tema Seçimi
+            </p>
+        </div>
+    </div>
+
+    <!-- Marka Adı -->
+    <div class="form-group">
+        <label for="step01-brand-name">Marka Adı</label>
+        <input type="text" id="step01-brand-name" placeholder="Örn: MEGA-STACK, MyCompany" value="MEGA-STACK">
+        <div class="form-hint">Dashboard'da ve bildirim e-postalarında görünecek marka adınız.</div>
+    </div>
+
+    <!-- Sistem Adı -->
+    <div class="form-group">
+        <label for="step01-system-name">Sistem Adı</label>
+        <input type="text" id="step01-system-name" placeholder="Örn: Production Server, Dev Environment"
+            value="Production">
+        <div class="form-hint">Bu sunucuya verilen tanımlayıcı isim.</div>
+    </div>
+
+    <!-- Logo Yükleme -->
+    <div class="form-group">
+        <label>Logo (Opsiyonel)</label>
+        <div class="file-upload" id="step01-logo-upload" onclick="document.getElementById('step01-logo-input').click()">
+            <div class="file-upload-icon">🖼️</div>
+            <div class="file-upload-text">Logo dosyasını sürükleyin veya tıklayın</div>
+            <div class="file-upload-hint">PNG, SVG — Maks. 2MB — Önerilen: 256x256px</div>
+        </div>
+        <input type="file" id="step01-logo-input" accept=".png,.svg" style="display:none"
+            onchange="step01LogoPreview(this)">
+        <div id="step01-logo-preview" style="display:none; margin-top:12px; text-align:center;">
+            <img id="step01-logo-img"
+                style="max-width:128px; max-height:128px; border-radius:8px; border:1px solid var(--border-color);">
+            <button class="btn btn-sm btn-secondary" style="display:block; margin:8px auto 0;"
+                onclick="step01RemoveLogo()">Logoyu Kaldır</button>
+        </div>
+    </div>
+
+    <!-- Tema Seçimi -->
+    <div class="form-group">
+        <label>Dashboard Teması</label>
+        <div class="toggle-group" style="max-width:320px;">
+            <input type="radio" id="step01-theme-dark" name="step01-theme" value="dark" checked>
+            <label for="step01-theme-dark">🌙 Dark</label>
+            <input type="radio" id="step01-theme-light" name="step01-theme" value="light">
+            <label for="step01-theme-light">☀️ Light</label>
+        </div>
+    </div>
+
+    <!-- Admin E-posta -->
+    <div class="form-group">
+        <label for="step01-admin-email">Yönetici E-postası</label>
+        <input type="email" id="step01-admin-email" placeholder="admin@example.com">
+        <div class="form-hint">Sistem bildirimleri ve uyarılar bu adrese gönderilecektir.</div>
+    </div>
+
+    <!-- Butonlar -->
+    <div class="step-actions">
+        <button class="btn btn-secondary" onclick="WizardCore.goToStep(0)">
+            ← Önceki
+        </button>
+        <button class="btn btn-primary" id="step01-next-btn" onclick="step01Save()">
+            Kaydet & Devam →
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep01() {
+        // Marka ayarları varsa mevcut değerleri yükle
+    }
+
+    function step01LogoPreview(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // Boyut kontrolü (2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                WizardCore.showToast('Logo dosyası 2MB\'dan büyük olamaz.', 'error');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('step01-logo-img').src = e.target.result;
+                document.getElementById('step01-logo-preview').style.display = 'block';
+                document.getElementById('step01-logo-upload').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function step01RemoveLogo() {
+        document.getElementById('step01-logo-input').value = '';
+        document.getElementById('step01-logo-preview').style.display = 'none';
+        document.getElementById('step01-logo-upload').style.display = '';
+    }
+
+    async function step01Save() {
+        const brandInput = document.getElementById('step01-brand-name');
+        const systemInput = document.getElementById('step01-system-name');
+        const container = brandInput.closest('.card');
+
+        WizardValidation.clearAllErrors(container);
+
+        // Validasyon
+        const brandCheck = WizardValidation.validateBrandName(brandInput.value);
+        if (!brandCheck.valid) {
+            WizardValidation.showFieldError(brandInput, brandCheck.error);
+            return;
+        }
+
+        const systemCheck = WizardValidation.validateRequired(systemInput.value, 'Sistem Adı');
+        if (!systemCheck.valid) {
+            WizardValidation.showFieldError(systemInput, systemCheck.error);
+            return;
+        }
+
+        const theme = document.querySelector('input[name="step01-theme"]:checked').value;
+
+        WizardCore.showToast('Step 01 initialized successfully — Marka ayarları kaydedildi.', 'success');
+        WizardCore.nextStep();
+    }
+</script>

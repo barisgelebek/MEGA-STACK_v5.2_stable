@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>MEGA-STACK v2.5 — Installation Wizard</title>
+
+    <!-- Local Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <style>
+        /* Fallback — yerel font yoksa sistem fontları */
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: local('Inter Regular'), local('Inter-Regular');
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: local('Inter Medium'), local('Inter-Medium');
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: local('Inter SemiBold'), local('Inter-SemiBold');
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: local('Inter Bold'), local('Inter-Bold');
+        }
+
+        @font-face {
+            font-family: 'JetBrains Mono';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: local('JetBrains Mono Regular'), local('JetBrainsMono-Regular');
+        }
+    </style>
+
+    <!-- Theme & Layout -->
+    <link rel="stylesheet" href="css/themes/mega-stack-dark.css">
+    <link rel="stylesheet" href="css/wizard.main.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- ═══ Sidebar: Step Progress Bar ═══ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="header-brand">
+                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="#3b82f6" />
+                        <path d="M8 22V10l8 6-8 6zm8 0V10l8 6-8 6z" fill="#fff" opacity="0.9" />
+                    </svg>
+                    <div>
+                        <h1 style="font-size:0.95rem; margin:0;">MEGA-STACK</h1>
+                        <span style="font-size:0.65rem; color:var(--text-muted);">Installation Wizard v2.5</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-progress">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0 / 22</div>
+            </div>
+
+            <nav class="step-list" id="stepList">
+                <!-- JS tarafından doldurulacak -->
+            </nav>
+        </aside>
+
+        <!-- Mobile sidebar overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- ═══ Main Content ═══ -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menü">☰</button>
+                    <div class="header-status">
+                        <span id="headerStepInfo">Başlatılıyor...</span>
+                    </div>
+                </div>
+                <div class="header-status">
+                    <span id="headerBadge" class="badge badge--pending">Hazırlanıyor</span>
+                </div>
+            </header>
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <!-- Step Content Area -->
+                <section class="step-content" id="stepContent">
+                    <div class="card" style="text-align:center; padding:48px;">
+                        <div class="spinner" style="margin:0 auto 16px;"></div>
+                        <p style="color:var(--text-secondary);">Wizard yükleniyor...</p>
+                    </div>
+                </section>
+
+                <!-- Live Terminal / Console -->
+                <section class="terminal-panel" id="terminalPanel">
+                    <div class="terminal-header">
+                        <div class="terminal-header-left">
+                            <div class="terminal-dots">
+                                <span class="dot-red"></span>
+                                <span class="dot-yellow"></span>
+                                <span class="dot-green"></span>
+                            </div>
+                            <span class="terminal-title">install.log — Live Stream</span>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" id="terminalClearBtn" title="Temizle">⌫</button>
+                    </div>
+                    <div class="terminal-body" id="terminalBody">
+                        <div class="log-line">
+                            <span class="log-level INFO">INFO</span>
+                            <span class="log-message">Terminal akışı bekleniyor...</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/api-client.js"></script>
+    <script src="js/validation.js"></script>
+    <script src="js/wizard-core.js"></script>
+</body>
+
+</html>

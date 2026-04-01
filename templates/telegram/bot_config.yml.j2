@@ -1,0 +1,51 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   MEGA-STACK v2.5 — Telegram Bot Configuration Template
+   Hedef: /opt/mega-stack/config/telegram/bot_config.yml
+   Değişkenler: telegram_bot_token, telegram_chat_id, domain, admin_email
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+# MEGA-STACK v2.5 — Telegram Bot Konfigürasyonu
+# Oluşturulma: {{ now }}
+
+bot:
+  token: "{{ telegram_bot_token }}"
+  admin_chat_id: "{{ telegram_chat_id }}"
+  parse_mode: "HTML"
+
+notifications:
+  # Servis durum bildirimleri
+  service_alerts: true
+  # Yedekleme tamamlanma bildirimleri
+  backup_alerts: true
+  # Güvenlik uyarıları (CrowdSec ban, brute-force vb.)
+  security_alerts: true
+  # Günlük özet raporu
+  daily_summary: true
+  daily_summary_time: "09:00"
+
+templates:
+  service_down: |
+    🔴 <b>Servis Çöktü</b>
+    Servis: {{ "{{ service_name }}" }}
+    Zaman: {{ "{{ timestamp }}" }}
+    Domain: {{ domain }}
+
+  service_up: |
+    🟢 <b>Servis Kurtarıldı</b>
+    Servis: {{ "{{ service_name }}" }}
+    Zaman: {{ "{{ timestamp }}" }}
+
+  backup_complete: |
+    💾 <b>Yedekleme Tamamlandı</b>
+    Boyut: {{ "{{ backup_size }}" }}
+    Süre: {{ "{{ duration }}" }}
+
+  security_alert: |
+    🛡️ <b>Güvenlik Uyarısı</b>
+    Tip: {{ "{{ alert_type }}" }}
+    IP: {{ "{{ source_ip }}" }}
+    Detay: {{ "{{ details }}" }}
+
+server:
+  domain: "{{ domain }}"
+  admin_email: "{{ admin_email }}"

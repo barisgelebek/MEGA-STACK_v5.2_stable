@@ -1,0 +1,18 @@
+{# ═══════════════════════════════════════════════════════════════════
+   AI Providers Seed Data — Jinja2 Template
+   Gemini, Groq ve Telegram provider kayıtlarını oluşturur.
+   Değişkenler: gemini_key, groq_key, telegram_token, telegram_chat_id, now
+   ═══════════════════════════════════════════════════════════════════ #}
+
+-- AI Providers Seed Data (v2.5)
+-- Oluşturulma: {{ now }}
+
+INSERT OR REPLACE INTO ai_providers (provider_name, api_key_enc, model, is_active, config, created_at, updated_at)
+VALUES ('gemini', '{{ gemini_key_enc }}', 'gemini-2.0-flash', 1, '{"endpoint": "https://generativelanguage.googleapis.com/v1beta"}', '{{ now }}', '{{ now }}');
+
+INSERT OR REPLACE INTO ai_providers (provider_name, api_key_enc, model, is_active, config, created_at, updated_at)
+VALUES ('groq', '{{ groq_key_enc }}', 'llama-3.3-70b-versatile', 1, '{"endpoint": "https://api.groq.com/openai/v1"}', '{{ now }}', '{{ now }}');
+
+-- Telegram bilgileri service_credentials tablosuna
+INSERT OR REPLACE INTO service_credentials (service_name, username, api_key_enc, extra_enc, created_at, updated_at)
+VALUES ('telegram', '{{ telegram_chat_id }}', '{{ telegram_token_enc }}', NULL, '{{ now }}', '{{ now }}');

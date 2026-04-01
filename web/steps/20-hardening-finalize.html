@@ -1,0 +1,195 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 20: Hardening & Finalize — Sistem Mühürleme
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">20</div>
+        <div>
+            <h2>Hardening & Finalize</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Sistem mühürleme, izin kontrolü ve son doğrulama
+            </p>
+        </div>
+    </div>
+
+    <!-- Mühürleme bilgi kartı -->
+    <div class="card" style="border-left:3px solid var(--warning); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🔒 Bu adım dosya izinlerini kilitler, acme.json'u mühürler,
+            geçici dosyaları temizler ve wizard'ı pasifleştirir.
+            <strong>Bu işlem geri alınamaz.</strong>
+        </p>
+    </div>
+
+    <!-- Adım durumları -->
+    <div id="step20-phases" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; display:flex; align-items:center; gap:10px;"
+            id="step20-phase-permissions">
+            <span class="step20-icon" style="font-size:1.2rem;">⏳</span>
+            <div>
+                <strong>Dosya İzinleri</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">secrets/ ve kritik dizinlere chmod 0600/0700
+                </div>
+            </div>
+        </div>
+        <div class="card" style="padding:10px; display:flex; align-items:center; gap:10px;" id="step20-phase-acme">
+            <span class="step20-icon" style="font-size:1.2rem;">⏳</span>
+            <div>
+                <strong>acme.json Mühürleme</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">KIRMIZI ÇİZGİ: chmod 600 zorunlu</div>
+            </div>
+        </div>
+        <div class="card" style="padding:10px; display:flex; align-items:center; gap:10px;" id="step20-phase-cleanup">
+            <span class="step20-icon" style="font-size:1.2rem;">⏳</span>
+            <div>
+                <strong>Geçici Dosya Temizliği</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">/tmp kurulum kalıntıları</div>
+            </div>
+        </div>
+        <div class="card" style="padding:10px; display:flex; align-items:center; gap:10px;" id="step20-phase-passivate">
+            <span class="step20-icon" style="font-size:1.2rem;">⏳</span>
+            <div>
+                <strong>Wizard Pasifleştirme</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Binary kilidi, .ready flag oluşturma</div>
+            </div>
+        </div>
+        <div class="card" style="padding:10px; display:flex; align-items:center; gap:10px;" id="step20-phase-health">
+            <span class="step20-icon" style="font-size:1.2rem;">⏳</span>
+            <div>
+                <strong>Son Sağlık Kontrolü</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">16 konteyner health doğrulaması</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canlı Log Stream -->
+    <div class="form-group">
+        <label>Mühürleme Logları</label>
+        <div id="step20-log-stream" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
+                    padding:12px; max-height:200px; overflow-y:auto; font-family:monospace; font-size:0.8rem;
+                    color:var(--text-muted);">
+            Mühürleme başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <!-- Sonuç özeti -->
+    <div id="step20-summary" class="card"
+        style="display:none; padding:16px; margin-top:16px; border-left:3px solid var(--success);">
+    </div>
+
+    <!-- Butonlar -->
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="step20StartHardening()" id="step20-start-btn">
+            🔒 Mühürlemeyi Başlat
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep20() {
+        console.log('[Step 20] Hardening & Finalize sayfası yüklendi.');
+    }
+
+    function step20UpdatePhase(phaseId, status) {
+        const el = document.querySelector('#' + phaseId + ' .step20-icon');
+        if (!el) return;
+        switch (status) {
+            case 'running': el.textContent = '🔄'; break;
+            case 'done': el.textContent = '✅'; break;
+            case 'error': el.textContent = '❌'; break;
+            default: el.textContent = '⏳';
+        }
+    }
+
+    function step20AppendLog(msg) {
+        const logDiv = document.getElementById('step20-log-stream');
+        if (logDiv.textContent === 'Mühürleme başlatılmayı bekliyor...') {
+            logDiv.textContent = '';
+        }
+        const line = document.createElement('div');
+        line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        logDiv.appendChild(line);
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function step20StartHardening() {
+        const btn = document.getElementById('step20-start-btn');
+        btn.disabled = true;
+        btn.textContent = '🔄 Mühürleniyor...';
+
+        const phases = ['permissions', 'acme', 'cleanup', 'passivate', 'health'];
+
+        // Animasyonlu faz ilerleme
+        for (let i = 0; i < phases.length; i++) {
+            step20UpdatePhase('step20-phase-' + phases[i], 'running');
+            step20AppendLog(phases[i] + ' adımı başlatılıyor...');
+            if (i < phases.length - 1) {
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+
+        try {
+            step20AppendLog('API finalize çağrısı yapılıyor...');
+
+            const result = await WizardAPI.request('/api/install/finalize', {
+                method: 'POST',
+            });
+
+            if (!result.success) throw new Error(result.error || 'Mühürleme hatası');
+            const data = result.data;
+
+            const report = data.hardening;
+            const containers = data.containers;
+
+            // Fazları güncelle
+            step20UpdatePhase('step20-phase-permissions', report.error_count === 0 ? 'done' : 'error');
+            step20UpdatePhase('step20-phase-acme', report.acme_sealed ? 'done' : 'error');
+            step20UpdatePhase('step20-phase-cleanup', 'done');
+            step20UpdatePhase('step20-phase-passivate', 'done');
+            step20UpdatePhase('step20-phase-health', containers.healthy === containers.total ? 'done' : 'error');
+
+            // Log aksiyonlarını ekle
+            if (report.actions) {
+                report.actions.forEach(function (action) {
+                    step20AppendLog(action);
+                });
+            }
+
+            step20AppendLog('═══ Mühürleme tamamlandı ═══');
+            step20AppendLog('Dosya: ' + report.files_chmod + ' | Dizin: ' + report.dirs_chmod +
+                ' | Temizlik: ' + report.temp_cleaned + ' | Hata: ' + report.error_count);
+            step20AppendLog('Konteyner: ' + containers.healthy + '/' + containers.total + ' healthy');
+
+            // Özet kartı
+            const summaryDiv = document.getElementById('step20-summary');
+            summaryDiv.style.display = 'block';
+            summaryDiv.innerHTML =
+                '<h3 style="margin-top:0;">🛡️ Mühürleme Tamamlandı</h3>' +
+                '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">' +
+                '<div style="text-align:center;"><div style="font-size:1.5rem; font-weight:700; color:var(--success);">' + report.files_chmod + '</div><div style="font-size:0.8rem;">Dosya Kilitlendi</div></div>' +
+                '<div style="text-align:center;"><div style="font-size:1.5rem; font-weight:700; color:var(--success);">' + report.dirs_chmod + '</div><div style="font-size:0.8rem;">Dizin Kilitlendi</div></div>' +
+                '<div style="text-align:center;"><div style="font-size:1.5rem; font-weight:700; color:var(--primary);">' + containers.healthy + '/' + containers.total + '</div><div style="font-size:0.8rem;">Healthy</div></div>' +
+                '<div style="text-align:center;"><div style="font-size:1.5rem; font-weight:700; color:' + (report.error_count > 0 ? 'var(--danger)' : 'var(--success)') + ';">' + report.error_count + '</div><div style="font-size:0.8rem;">Hata</div></div>' +
+                '</div>';
+
+            btn.textContent = '✔ Mühürleme Tamamlandı';
+
+            // 3 saniye sonra otomatik ilerle
+            setTimeout(function () {
+                WizardCore.nextStep();
+            }, 3000);
+
+        } catch (err) {
+            step20AppendLog('HATA: ' + err.message);
+            phases.forEach(function (p) { step20UpdatePhase('step20-phase-' + p, 'error'); });
+            btn.disabled = false;
+            btn.textContent = '🔄 Tekrar Dene';
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStep20);
+    } else {
+        initStep20();
+    }
+</script>

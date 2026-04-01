@@ -1,0 +1,299 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 00: License Auth — HWID + Key + Sunucu Onay (Hibrit Kilit)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">00</div>
+        <div>
+            <h2>Lisans Doğrulama</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                HWID + License Key + Sunucu Onayı
+            </p>
+        </div>
+    </div>
+
+    <!-- HWID Göstergesi -->
+    <div class="form-group">
+        <label>Sunucu HWID (Hardware ID)</label>
+        <div class="hwid-display" id="step00-hwid">
+            <span id="step00-hwid-text" style="color:var(--text-muted);">Yükleniyor...</span>
+            <button class="copy-btn" onclick="step00CopyHWID()" title="Kopyala">📋</button>
+        </div>
+        <div class="form-hint">Bu hash, sunucunuzun benzersiz kimliğidir. Lisans anahtarınız bu HWID'ye mühürlenecektir.
+        </div>
+    </div>
+
+    <!-- Sistem Kaynakları -->
+    <div class="form-group">
+        <label>Sunucu Kaynakları</label>
+        <div id="step00-resources"
+            style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
+            <div class="card" style="padding:12px; text-align:center;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">vCPU</div>
+                <div id="step00-cpu" style="font-size:1.2rem; font-weight:700;">—</div>
+            </div>
+            <div class="card" style="padding:12px; text-align:center;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">RAM</div>
+                <div id="step00-ram" style="font-size:1.2rem; font-weight:700;">—</div>
+            </div>
+            <div class="card" style="padding:12px; text-align:center;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">Disk (Boş)</div>
+                <div id="step00-disk" style="font-size:1.2rem; font-weight:700;">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yedek Bilgisi -->
+    <div class="form-group" id="step00-restore-section" style="display:none;">
+        <div class="info-box"
+            style="background:var(--health-yellow-bg); border-color:var(--health-yellow-border); color:var(--health-yellow);">
+            <span class="info-icon">📦</span>
+            <div>
+                <strong>Mevcut Yedek Bulundu!</strong>
+                <p style="font-size:0.8rem; margin-top:4px;" id="step00-restore-info"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lisans Anahtarı Girişi -->
+    <div class="form-group">
+        <label for="step00-license-key">Lisans Anahtarı</label>
+        <input type="password" id="step00-license-key" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off">
+        <div class="form-hint">BarisGelebek Cloud tarafından size verilen lisans anahtarını girin.</div>
+    </div>
+
+    <!-- Master Şifre -->
+    <div class="form-group">
+        <label for="step00-master-pass">Master Şifre (MEGA_MASTER_KEY için)</label>
+        <input type="password" id="step00-master-pass" placeholder="Güçlü bir şifre belirleyin (min. 6 karakter)"
+            autocomplete="new-password">
+        <div class="form-hint">Bu şifre, sistem genelindeki tüm şifreleme anahtarının türetilmesinde kullanılacaktır.
+        </div>
+    </div>
+
+    <!-- Doğrulama Durumu -->
+    <div id="step00-verify-status" style="display:none; margin-bottom:16px;"></div>
+
+    <!-- Donanım Uyarısı (Hardware Guard) -->
+    <div id="step00-hw-guard" style="display:none; margin-bottom:16px;"></div>
+
+    <!-- Butonlar -->
+    <div class="step-actions">
+        <button class="btn btn-primary" id="step00-verify-btn" onclick="step00Verify()">
+            🔑 Lisansı Doğrula
+        </button>
+    </div>
+</div>
+
+<script>
+    // ── Step 00 Init ──
+    async function initStep00() {
+        // HWID yükle
+        const hwidRes = await WizardAPI.getHWID();
+        if (hwidRes.success) {
+            document.getElementById('step00-hwid-text').textContent = hwidRes.data.hwid;
+            document.getElementById('step00-hwid-text').style.color = 'var(--text-primary)';
+        }
+
+        // Sistem kaynakları
+        const resRes = await WizardAPI.getSystemResources();
+        if (resRes.success) {
+            const d = resRes.data;
+            document.getElementById('step00-cpu').textContent = `${d.cpu_count} Core`;
+            document.getElementById('step00-ram').textContent = `${d.ram_total_gb} GB`;
+            document.getElementById('step00-disk').textContent = `${d.disk_free_gb} GB`;
+
+            // Renk kodları
+            document.getElementById('step00-cpu').style.color =
+                d.cpu_count >= 6 ? 'var(--health-green)' : d.cpu_count >= 4 ? 'var(--health-yellow)' : 'var(--health-red)';
+            document.getElementById('step00-ram').style.color =
+                d.ram_total_gb >= 12 ? 'var(--health-green)' : d.ram_total_gb >= 8 ? 'var(--health-yellow)' : 'var(--health-red)';
+            document.getElementById('step00-disk').style.color =
+                d.disk_free_gb >= 40 ? 'var(--health-green)' : 'var(--health-red)';
+        }
+
+        // Yedek taraması
+        const restoreRes = await WizardAPI.getRestoreCheck();
+        if (restoreRes.success && restoreRes.data.restore_available) {
+            const section = document.getElementById('step00-restore-section');
+            section.style.display = 'block';
+            document.getElementById('step00-restore-info').textContent =
+                `${restoreRes.data.backup_count} yedek dosya tespit edildi. Kurulum sonunda restore seçeneği sunulacaktır.`;
+        }
+    }
+
+    // ── HWID Kopyala ──
+    function step00CopyHWID() {
+        const hwid = document.getElementById('step00-hwid-text').textContent;
+        navigator.clipboard.writeText(hwid).then(() => {
+            WizardCore.showToast('HWID panoya kopyalandı.', 'success');
+        });
+    }
+
+    // ── Hardware Guard: Lisans tier donanım limitleri karşılaştırması ──
+    async function step00HardwareGuard(hardwareLimits, tier) {
+        const guardEl = document.getElementById('step00-hw-guard');
+
+        // Tier-based fallback: Lisans sunucusu hardware_limits dönmezse sabit kuralları kullan
+        const tierReqs = WizardCore.TIER_HARDWARE_REQUIREMENTS;
+        const effectiveLimits = hardwareLimits || tierReqs[tier] || null;
+        if (!effectiveLimits) return;
+
+        const resRes = await WizardAPI.getSystemResources();
+        if (!resRes.success) return;
+
+        const sys = resRes.data;
+        const warnings = [];
+        let isCritical = false;
+
+        if (effectiveLimits.min_vcpu && sys.cpu_count < effectiveLimits.min_vcpu) {
+            warnings.push(`vCPU: Mevcut <strong>${sys.cpu_count} Core</strong>, Önerilen ≥ <strong>${effectiveLimits.min_vcpu} Core</strong>`);
+        }
+        if (effectiveLimits.min_ram_gb && sys.ram_total_gb < effectiveLimits.min_ram_gb) {
+            warnings.push(`RAM: Mevcut <strong>${sys.ram_total_gb} GB</strong>, Gerekli ≥ <strong>${effectiveLimits.min_ram_gb} GB</strong>`);
+            isCritical = true; // RAM yetersizliği kritik
+        }
+        if (effectiveLimits.min_disk_gb && sys.disk_free_gb < effectiveLimits.min_disk_gb) {
+            warnings.push(`Disk: Mevcut <strong>${sys.disk_free_gb} GB</strong> boş, Önerilen ≥ <strong>${effectiveLimits.min_disk_gb} GB</strong>`);
+        }
+
+        if (warnings.length === 0) {
+            // Donanım uyumlu — Onay rozeti göster
+            guardEl.style.display = 'block';
+            guardEl.innerHTML = `
+                <div class="info-box" style="background:var(--health-green-bg); border-color:var(--health-green-border); color:var(--health-green);">
+                    <span class="info-icon">✅</span>
+                    <div>
+                        <strong>Donanım Uyumu: Başarılı</strong>
+                        <p style="font-size:0.8rem; margin-top:4px;">
+                            Sunucu kaynakları <strong>${WizardCore.escapeHtml(tier || 'Standard')}</strong> paketi için yeterli.
+                            (RAM: ${sys.ram_total_gb} GB, CPU: ${sys.cpu_count} Core, Disk: ${sys.disk_free_gb} GB boş)
+                        </p>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        // Uyarı veya kritik hata göster
+        const boxStyle = isCritical
+            ? 'background:var(--health-red-bg); border-color:var(--health-red-border); color:var(--health-red);'
+            : 'background:var(--health-yellow-bg); border-color:var(--health-yellow-border); color:var(--health-yellow);';
+        const icon = isCritical ? '🚫' : '⚠️';
+        const title = isCritical ? 'Donanım Uyumsuzluğu — Kritik' : 'Donanım Uyarısı';
+        const desc = isCritical
+            ? `Bu sunucunun RAM'i <strong>${WizardCore.escapeHtml(tier || 'Standard')}</strong> paketi için yetersiz. Kuruluma devam edebilirsiniz ancak ciddi performans sorunları ve servis çökmeleri yaşanabilir.`
+            : `Mevcut sunucu kaynaklarınız, <strong>${WizardCore.escapeHtml(tier || 'Standard')}</strong> paketinin önerilen minimum değerlerinin altındadır. Kuruluma devam edebilirsiniz, ancak performans sorunları yaşanabilir.`;
+
+        const tierSuggestion = step00SuggestTier(sys.ram_total_gb);
+
+        guardEl.style.display = 'block';
+        guardEl.innerHTML = `
+            <div class="info-box" style="${boxStyle}">
+                <span class="info-icon">${icon}</span>
+                <div>
+                    <strong>${title}</strong>
+                    <p style="font-size:0.8rem; margin-top:4px;">${desc}</p>
+                    <ul style="font-size:0.8rem; margin-top:6px; padding-left:16px;">
+                        ${warnings.map(w => `<li>${w}</li>`).join('')}
+                    </ul>
+                    ${tierSuggestion}
+                </div>
+            </div>`;
+    }
+
+    // ── Tier Öneri: RAM'e göre uygun paketi öner ──
+    function step00SuggestTier(ramGb) {
+        let suggested = null;
+        if (ramGb >= 16) suggested = 'Enterprise';
+        else if (ramGb >= 8) suggested = 'Professional';
+        else if (ramGb >= 4) suggested = 'Standart';
+        else return '<p style="font-size:0.8rem; margin-top:6px; font-weight:600;">⚠️ Minimum 4 GB RAM gereklidir. Sunucunuzu yükseltin.</p>';
+
+        return `<p style="font-size:0.8rem; margin-top:6px;">💡 Bu sunucu için önerilen paket: <strong>${suggested}</strong></p>`;
+    }
+
+    // ── Lisans Doğrulama ──
+    async function step00Verify() {
+        const keyInput = document.getElementById('step00-license-key');
+        const passInput = document.getElementById('step00-master-pass');
+        const statusEl = document.getElementById('step00-verify-status');
+        const btn = document.getElementById('step00-verify-btn');
+
+        WizardValidation.clearAllErrors(keyInput.closest('.card'));
+
+        // Validasyon
+        const keyCheck = WizardValidation.validateLicenseKey(keyInput.value);
+        if (!keyCheck.valid) {
+            WizardValidation.showFieldError(keyInput, keyCheck.error);
+            return;
+        }
+
+        const passCheck = WizardValidation.validateRequired(passInput.value, 'Master Şifre');
+        if (!passCheck.valid) {
+            WizardValidation.showFieldError(passInput, passCheck.error);
+            return;
+        }
+
+        if (passInput.value.length < 6) {
+            WizardValidation.showFieldError(passInput, 'Şifre en az 6 karakter olmalıdır.');
+            return;
+        }
+
+        // Loading state
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div> Doğrulanıyor...';
+        statusEl.style.display = 'none';
+
+        const result = await WizardAPI.verifyLicense(keyCheck.value, passInput.value);
+
+        btn.disabled = false;
+        btn.innerHTML = '🔑 Lisansı Doğrula';
+        statusEl.style.display = 'block';
+
+        if (result.success && result.data.verified) {
+            const isOffline = !!result.data.offline_mode;
+            const offlineNote = isOffline
+                ? '<p style="font-size:0.8rem; margin-top:6px; color:var(--health-yellow);">⚠️ Çevrimdışı Mod — Lokal mühür ile doğrulandı. İnternet bağlantısı olmadan devam ediliyor.</p>'
+                : '';
+            statusEl.innerHTML = `
+                <div class="info-box" style="background:var(--health-green-bg); border-color:var(--health-green-border); color:var(--health-green);">
+                    <span class="info-icon">✅</span>
+                    <div>
+                        <strong>Lisans Onaylandı!</strong>
+                        <p style="font-size:0.8rem; margin-top:4px;">
+                            Tier: ${WizardCore.escapeHtml(result.data.tier || 'Standard')} — Sonraki adıma geçebilirsiniz.
+                        </p>
+                        ${offlineNote}
+                    </div>
+                </div>`;
+
+            // ── Hardware Guard: Donanım karşılaştırması ──
+            step00HardwareGuard(result.data.hardware_limits, result.data.tier);
+
+            // ── Tier-Aware: Servis kilitleme bilgisini WizardCore'a aktar ──
+            if (result.data.allowed_services) {
+                WizardCore.setTierInfo({
+                    tier: result.data.tier,
+                    allowed_services: result.data.allowed_services,
+                    offline_mode: isOffline,
+                });
+            }
+            // ── Offline Mode Badge ──
+            WizardCore.updateOfflineBadge(isOffline);
+
+            btn.innerHTML = '→ Sonraki Adım';
+            btn.onclick = () => WizardCore.nextStep();
+            WizardCore.showToast('Step 00 initialized successfully', 'success');
+        } else {
+            const msg = result.data?.message || result.error || 'Doğrulama başarısız.';
+            statusEl.innerHTML = `
+                <div class="info-box" style="background:var(--health-red-bg); border-color:var(--health-red-border); color:var(--health-red);">
+                    <span class="info-icon">❌</span>
+                    <div>
+                        <strong>Lisans Reddedildi</strong>
+                        <p style="font-size:0.8rem; margin-top:4px;">${WizardCore.escapeHtml(msg)}</p>
+                    </div>
+                </div>`;
+        }
+    }
+</script>

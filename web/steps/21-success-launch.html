@@ -1,0 +1,305 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 21: Success & Launch — Kurulum Tamamlandı
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">21</div>
+        <div>
+            <h2>Kurulum Tamamlandı! 🎉</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Password Matrix & Dashboard Erişimi
+            </p>
+        </div>
+    </div>
+
+    <!-- Başarı Mesajı -->
+    <div class="card"
+        style="border-left:3px solid var(--success); padding:16px; margin-bottom:20px; text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:8px;">🛡️</div>
+        <h3 style="margin:0 0 8px; color:var(--success);">MEGA-STACK v2.5 Operasyonel</h3>
+        <p style="margin:0; font-size:0.9rem; color:var(--text-muted);">
+            Tüm servisler deploy edildi, sistem mühürlendi ve güvenlik ayarları uygulandı.
+        </p>
+    </div>
+
+    <!-- Password Matrix Tablosu -->
+    <div class="form-group">
+        <label>🔑 Password Matrix</label>
+        <div style="overflow-x:auto;">
+            <table id="step21-password-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="background:var(--bg-tertiary); text-align:left;">
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">Servis</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">Kullanıcı</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">Şifre / Key</th>
+                        <th style="padding:10px; border-bottom:2px solid var(--border);">Dosya</th>
+                    </tr>
+                </thead>
+                <tbody id="step21-matrix-body">
+                    <tr>
+                        <td colspan="4" style="padding:20px; text-align:center; color:var(--text-muted);">Yükleniyor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- İndirme Butonları -->
+    <div class="card" style="border-left:3px solid var(--danger); padding:12px; margin:16px 0;">
+        <p style="font-size:0.85rem; margin:0 0 12px;">
+            ⚠️ <strong>ZORUNLU:</strong> Password matrix'i mutlaka indirin ve güvenli bir yerde saklayın.
+            Bu bilgilere tekrar erişemeyebilirsiniz.
+        </p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="step21DownloadTxt()" id="step21-dl-txt">
+                📄 TXT İndir
+            </button>
+            <button class="btn" onclick="step21DownloadPdf()" style="background:var(--danger); color:white;"
+                id="step21-dl-pdf">
+                📑 PDF İndir
+            </button>
+        </div>
+    </div>
+
+    <!-- Servis Linkleri -->
+    <div class="form-group">
+        <label>🌐 Servis Erişim Linkleri</label>
+        <div id="step21-links"
+            style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+            <!-- JS tarafından doldurulacak -->
+        </div>
+    </div>
+
+    <!-- Hardening Durumu -->
+    <div class="form-group">
+        <label>🔒 Güvenlik Durumu</label>
+        <div id="step21-hardening-status"
+            style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+        </div>
+    </div>
+</div>
+
+<script>
+    let step21MatrixData = null;
+
+    async function initStep21() {
+        console.log('[Step 21] Success & Launch sayfası yüklendi.');
+        await step21LoadMatrix();
+
+        // Anonim kurulum analytics'i best-effort gönder
+        if (typeof WizardAPI !== 'undefined' && WizardAPI.sendAnalytics) {
+            WizardAPI.sendAnalytics();
+        }
+    }
+
+    async function step21LoadMatrix() {
+        try {
+            const result = await WizardAPI.request('/api/install/password-matrix');
+            if (!result.success) throw new Error(result.error || 'Veri alınamadı');
+            const data = result.data;
+
+            step21MatrixData = data;
+            step21RenderTable(data.matrix);
+            step21RenderLinks(data);
+            step21RenderHardening(data.hardening);
+
+        } catch (err) {
+            const errEl = document.createElement('td');
+            errEl.colSpan = 4;
+            errEl.style.cssText = 'padding:20px; text-align:center; color:var(--danger);';
+            errEl.textContent = 'Hata: ' + err.message;
+            const tr = document.createElement('tr');
+            tr.appendChild(errEl);
+            const tbody = document.getElementById('step21-matrix-body');
+            tbody.innerHTML = '';
+            tbody.appendChild(tr);
+        }
+    }
+
+    function step21RenderTable(matrix) {
+        const tbody = document.getElementById('step21-matrix-body');
+        tbody.innerHTML = '';
+
+        matrix.forEach(function (row) {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border)';
+
+            const tdService = document.createElement('td');
+            tdService.style.padding = '8px 10px';
+            tdService.style.fontWeight = '600';
+            tdService.textContent = row.service;
+
+            const tdUser = document.createElement('td');
+            tdUser.style.padding = '8px 10px';
+            tdUser.textContent = row.username;
+
+            const tdPass = document.createElement('td');
+            tdPass.style.padding = '8px 10px';
+            tdPass.style.fontFamily = 'monospace';
+            tdPass.style.fontSize = '0.8rem';
+            tdPass.style.wordBreak = 'break-all';
+
+            // Göster/Gizle mekanizması
+            const passSpan = document.createElement('span');
+            passSpan.textContent = '••••••••';
+            passSpan.dataset.value = row.password;
+            passSpan.dataset.visible = 'false';
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = '👁️';
+            toggleBtn.style.cssText = 'border:none; background:none; cursor:pointer; margin-left:6px; font-size:0.85rem;';
+            toggleBtn.onclick = function () {
+                if (passSpan.dataset.visible === 'false') {
+                    passSpan.textContent = passSpan.dataset.value;
+                    passSpan.dataset.visible = 'true';
+                } else {
+                    passSpan.textContent = '••••••••';
+                    passSpan.dataset.visible = 'false';
+                }
+            };
+
+            tdPass.appendChild(passSpan);
+            tdPass.appendChild(toggleBtn);
+
+            const tdFile = document.createElement('td');
+            tdFile.style.padding = '8px 10px';
+            tdFile.style.fontSize = '0.8rem';
+            tdFile.style.color = 'var(--text-muted)';
+            tdFile.textContent = row.file;
+
+            tr.appendChild(tdService);
+            tr.appendChild(tdUser);
+            tr.appendChild(tdPass);
+            tr.appendChild(tdFile);
+            tbody.appendChild(tr);
+        });
+    }
+
+    function step21RenderLinks(data) {
+        const container = document.getElementById('step21-links');
+        const links = [
+            { label: '📊 Dashboard', url: data.dashboard_url },
+            { label: '📧 Webmail', url: data.webmail_url },
+            { label: '🐳 Portainer', url: data.portainer_url },
+        ];
+
+        container.innerHTML = '';
+        links.forEach(function (link) {
+            if (!link.url) return;
+            // Protokol kontrolü — sadece https:// izin ver
+            var safeUrl = String(link.url);
+            if (!/^https?:\/\//i.test(safeUrl)) safeUrl = 'https://' + safeUrl;
+            var a = document.createElement('a');
+            a.href = safeUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'card';
+            a.style.cssText = 'padding:12px; text-align:center; text-decoration:none; color:var(--text-primary); transition:all 0.2s;';
+            var labelDiv = document.createElement('div');
+            labelDiv.style.cssText = 'font-size:1.1rem; margin-bottom:4px;';
+            labelDiv.textContent = link.label;
+            var urlDiv = document.createElement('div');
+            urlDiv.style.cssText = 'font-size:0.75rem; color:var(--text-muted);';
+            urlDiv.textContent = safeUrl;
+            a.appendChild(labelDiv);
+            a.appendChild(urlDiv);
+            a.onmouseover = function () { this.style.borderColor = 'var(--primary)'; };
+            a.onmouseout = function () { this.style.borderColor = ''; };
+            container.appendChild(a);
+        });
+    }
+
+    function step21RenderHardening(hardening) {
+        const container = document.getElementById('step21-hardening-status');
+        if (!hardening) return;
+
+        const items = [
+            {
+                label: 'acme.json',
+                ok: hardening.acme_json && hardening.acme_json.sealed,
+                detail: hardening.acme_json ? 'chmod ' + (hardening.acme_json.permissions || '?') : 'Bulunamadı',
+            },
+            {
+                label: 'Secrets',
+                ok: hardening.secrets_dir && hardening.secrets_dir.all_chmod_600,
+                detail: hardening.secrets_dir ? hardening.secrets_dir.file_count + ' dosya' : 'Bulunamadı',
+            },
+            {
+                label: 'Ready Flag',
+                ok: hardening.ready_flag && hardening.ready_flag.exists,
+                detail: hardening.ready_flag && hardening.ready_flag.exists ? 'Aktif' : 'Yok',
+            },
+        ];
+
+        container.innerHTML = '';
+        items.forEach(function (item) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.padding = '10px';
+            div.style.textAlign = 'center';
+            div.style.borderLeft = '3px solid ' + (item.ok ? 'var(--success)' : 'var(--danger)');
+            div.innerHTML = '<div style="font-size:0.9rem; font-weight:600;">' + (item.ok ? '✅' : '❌') + ' ' + item.label + '</div>' +
+                '<div style="font-size:0.75rem; color:var(--text-muted);">' + item.detail + '</div>';
+            container.appendChild(div);
+        });
+    }
+
+    function step21GenerateTextContent() {
+        if (!step21MatrixData) return '';
+        const data = step21MatrixData;
+        let text = '═══════════════════════════════════════════════════\n';
+        text += '  MEGA-STACK v2.5 — Password Matrix\n';
+        text += '  Domain: ' + (data.domain || '—') + '\n';
+        text += '  Oluşturulma: ' + new Date().toISOString() + '\n';
+        text += '═══════════════════════════════════════════════════\n\n';
+
+        data.matrix.forEach(function (row) {
+            text += row.service + '\n';
+            text += '  Kullanıcı : ' + row.username + '\n';
+            text += '  Şifre/Key : ' + row.password + '\n';
+            text += '  Dosya     : ' + row.file + '\n';
+            text += '  Açıklama  : ' + row.description + '\n';
+            text += '─────────────────────────────────────────────────\n';
+        });
+
+        text += '\n⚠️ Bu dosyayı güvenli bir yerde saklayın.\n';
+        text += 'Bu bilgilere tekrar erişemeyebilirsiniz.\n';
+        return text;
+    }
+
+    function step21DownloadTxt() {
+        const content = step21GenerateTextContent();
+        if (!content) return;
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mega-stack-password-matrix.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function step21DownloadPdf() {
+        // PDF: Basit HTML → print yaklaşımı (tarayıcı PDF olarak kaydedebilir)
+        const content = step21GenerateTextContent();
+        if (!content) return;
+
+        const printWin = window.open('', '_blank');
+        printWin.document.write(
+            '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+            '<title>MEGA-STACK Password Matrix</title>' +
+            '<style>body{font-family:monospace;font-size:12px;padding:20px;white-space:pre-wrap;}</style>' +
+            '</head><body>' + content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+            '</body></html>'
+        );
+        printWin.document.close();
+        setTimeout(function () { printWin.print(); }, 500);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStep21);
+    } else {
+        initStep21();
+    }
+</script>

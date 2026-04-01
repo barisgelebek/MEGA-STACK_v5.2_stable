@@ -1,0 +1,61 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 11: PointVending App — Ana Uygulama
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">11</div>
+        <div>
+            <h2>PointVending App — Ana Uygulama</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                .NET 8 tabanlı PointVending uygulaması — MSSQL bağlantılı
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--warning); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🏭 PointVending, MSSQL sunucusuna bağımlıdır. Step 08 başarılı olmalıdır.
+            Connection string <code>secrets/</code> üzerinden otomatik enjekte edilir.
+            İlk migration ~90 saniye sürebilir.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">pointvending_app</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">5000</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">⚙️ Uygulama</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step11-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step11-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('11', this)" id="step11-deploy-btn">
+            🚀 PointVending Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep11() { console.log('[Step 11] PointVending App setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep11); } else { initStep11(); }
+</script>

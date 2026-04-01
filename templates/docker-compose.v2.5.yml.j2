@@ -1,0 +1,664 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   MEGA-STACK v2.5 — Docker Compose Orkestrasyon Şablonu (Jinja2)
+   16 Servis — Güvenlik → Veri → Uygulama → İzleme sırası
+   ═══════════════════════════════════════════════════════════════════════ #}
+secrets:
+  mssql_sa_password:
+    file: ./secrets/mssql_sa_password
+  pointvending_encryption_key:
+    file: ./secrets/pointvending_encryption_key
+  authelia_jwt_secret:
+    file: ./secrets/authelia_jwt_secret
+  authelia_storage_encryption_key:
+    file: ./secrets/authelia_storage_encryption_key
+  authelia_session_secret:
+    file: ./secrets/authelia_session_secret
+  iredmail_admin_password:
+    file: ./secrets/iredmail_admin_password
+  iredmail_mlmmjadmin_token:
+    file: ./secrets/iredmail_mlmmjadmin_token
+  iredmail_iredapd_password:
+    file: ./secrets/iredmail_iredapd_password
+  iredmail_mysql_root_password:
+    file: ./secrets/iredmail_mysql_root_password
+
+services:
+  # ═══════════════════════════════════════════════════════════════
+  # 🛡️ GRUP 1: GÜVENLİK
+  # ═══════════════════════════════════════════════════════════════
+
+  # ── 1. Traefik (Reverse Proxy) ──
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: always
+    mem_limit: 256m
+    cpus: 0.5
+    logging: &default-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      authelia:
+        condition: service_healthy
+    environment:
+      - DOCKER_API_VERSION=1.40
+    ports:
+      - "80:80"
+      - "443:443"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+      - ./traefik/certs:/certs
+      - ./traefik/dynamic:/dynamic-config:ro
+      - traefik-logs:/var/log/traefik
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.{{ domain }}`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ── 2. Authelia (SSO) ──
+  authelia:
+    image: authelia/authelia:4.39.15
+    container_name: authelia
+    restart: always
+    mem_limit: 128m
+    cpus: 0.25
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9091/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      iredmail:
+        condition: service_healthy
+    volumes:
+      - ./security/authelia:/config
+    networks:
+      - webnet
+    secrets:
+      - authelia_jwt_secret
+      - authelia_storage_encryption_key
+      - authelia_session_secret
+      - iredmail_admin_password
+    environment:
+      - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE=/run/secrets/authelia_jwt_secret
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=/run/secrets/authelia_storage_encryption_key
+      - AUTHELIA_SESSION_SECRET_FILE=/run/secrets/authelia_session_secret
+      - AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=/run/secrets/iredmail_admin_password
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.authelia.rule=Host(`auth.{{ domain }}`)"
+      - "traefik.http.routers.authelia.entrypoints=websecure"
+      - "traefik.http.routers.authelia.tls=true"
+      - "traefik.http.routers.authelia.tls.certresolver=letsencrypt"
+      - "traefik.http.services.authelia.loadbalancer.server.port=9091"
+      - "traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://auth.{{ domain }}/"
+      - "traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email"
+      - "traefik.http.routers.authelia.middlewares=crowdsec@file,security-headers@file,rate-limit@file"
+
+  # ── 3. CrowdSec (IP Reputation) ──
+  crowdsec:
+    image: crowdsecurity/crowdsec:v1.6.8
+    container_name: crowdsec
+    restart: always
+    mem_limit: 256m
+    cpus: 0.5
+    logging: *default-logging
+    env_file:
+      - ./security/crowdsec/crowdsec.env
+    volumes:
+      - crowdsec-db:/var/lib/crowdsec/data
+      - crowdsec-config:/etc/crowdsec
+      - /var/log:/var/log/host:ro
+      - traefik-logs:/var/log/traefik:ro
+    networks:
+      - webnet
+
+  # ── 4. CrowdSec Bouncer ──
+  crowdsec-bouncer:
+    image: fbonalair/traefik-crowdsec-bouncer:0.5.0
+    container_name: crowdsec-bouncer
+    restart: always
+    mem_limit: 64m
+    cpus: 0.25
+    logging: *default-logging
+    depends_on:
+      - crowdsec
+    environment:
+      - CROWDSEC_BOUNCER_API_KEY={{ crowdsec_bouncer_api_key | default('5OnHrntRx6z1PygIGM6GlaIPFzUda7oZ') }}
+      - CROWDSEC_AGENT_HOST=crowdsec:8080
+      - GIN_MODE=release
+    networks:
+      - webnet
+
+  # ── 5. CertDumper ──
+  cert-dumper:
+    image: ldez/traefik-certs-dumper:v2.8.1
+    container_name: cert-dumper
+    restart: always
+    mem_limit: 64m
+    cpus: 0.25
+    logging: *default-logging
+    volumes:
+      - ./traefik:/traefik:ro
+      - ./traefik/certs:/output
+    command: >
+      file --watch
+      --version v2
+      --source /traefik/acme.json
+      --dest /output
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /output/private/{{ domain }}.key || test -f /output/privatekey-{{ domain }}.pem || true"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════
+  # 💾 GRUP 2: VERİ
+  # ═══════════════════════════════════════════════════════════════
+
+  # ── 6. MSSQL Server ──
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql-server
+    restart: always
+    mem_limit: 2g
+    cpus: 2.0
+    logging: *default-logging
+    environment:
+      - ACCEPT_EULA=Y
+    secrets:
+      - mssql_sa_password
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "cat < /dev/null > /dev/tcp/localhost/1433"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    entrypoint: /bin/bash
+    command: >
+      -c "export MSSQL_SA_PASSWORD=$$(cat /run/secrets/mssql_sa_password) &&
+          exec /opt/mssql/bin/sqlservr"
+    volumes:
+      - ./mssql_data:/var/opt/mssql
+      - /opt/sqlpackage:/opt/sqlpackage:ro
+    networks:
+      - webnet
+
+  # ── 7. iRedMail (Mail Server) ──
+  iredmail:
+    image: iredmail/mariadb:stable
+    container_name: iredmail
+    hostname: {{ hostname | default('mail.' + domain) }}
+    mem_limit: 2g
+    cpus: 1.5
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "supervisorctl status postfix dovecot nginx | grep -q RUNNING || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    secrets:
+      - iredmail_admin_password
+      - iredmail_mlmmjadmin_token
+      - iredmail_iredapd_password
+      - iredmail_mysql_root_password
+    entrypoint: /bin/bash
+    command: >
+      -c "export FIRST_MAIL_DOMAIN_ADMIN_PASSWORD=$$(cat /run/secrets/iredmail_admin_password) &&
+          export MLMMJADMIN_API_TOKEN=$$(cat /run/secrets/iredmail_mlmmjadmin_token) &&
+          export IREDAPD_PASSWORD=$$(cat /run/secrets/iredmail_iredapd_password) &&
+          export MYSQL_ROOT_PASSWORD=$$(cat /run/secrets/iredmail_mysql_root_password) &&
+          /bin/bash /entrypoint.sh /bin/true &&
+          sed -i 's/autostart=true/autostart=false/' /etc/supervisor/conf.d/clamav.conf 2>/dev/null;
+          exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf -n"
+    environment:
+      - DOMAIN={{ domain }}
+      - HOSTNAME={{ hostname | default('mail.' + domain) }}
+      - FIRST_MAIL_DOMAIN={{ first_mail_domain | default(domain) }}
+    ports:
+      - "25:25"
+      - "587:587"
+      - "465:465"
+      - "110:110"
+      - "995:995"
+      - "143:143"
+      - "993:993"
+    volumes:
+      - ./iredmail/vmail:/var/vmail
+      - ./iredmail/data:/var/lib/mysql
+      - ./iredmail/custom:/opt/iredmail/custom
+      - ./traefik/certs:/opt/traefik-certs:ro
+    networks:
+      - webnet
+
+  # ═══════════════════════════════════════════════════════════════
+  # ⚙️ GRUP 3: UYGULAMA
+  # ═══════════════════════════════════════════════════════════════
+
+  # ── 8. Nginx Multi-Site ──
+  nginx-sites:
+    image: nginx:1.29-alpine
+    container_name: nginx-sites
+    restart: always
+    mem_limit: 128m
+    cpus: 0.5
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t 2>/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/vhosts:/etc/nginx/vhosts:ro
+      - ./web:/sites:ro
+    networks:
+      - webnet
+
+  # ── 9. PointVending (ASP.NET) ──
+  pointvending:
+    image: barisgelebek/pointvending:latest
+    container_name: pointvending_app
+    restart: always
+    mem_limit: 512m
+    cpus: 1.0
+    logging: *default-logging
+    secrets:
+      - mssql_sa_password
+      - pointvending_encryption_key
+    entrypoint: /bin/sh
+    command: >
+      -c "export ConnectionStrings__DefaultConnection=\"Server=mssql;Database=PointVendingDB;User Id=sa;Password=$$(cat /run/secrets/mssql_sa_password);TrustServerCertificate=true\" &&
+          export Encryption__Key=$$(cat /run/secrets/pointvending_encryption_key) &&
+          exec dotnet PointVending.Web.dll"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+    networks:
+      - webnet
+    volumes:
+      - ./pointvending_keys:/root/.aspnet/DataProtection-Keys
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.pointvending.rule=Host(`pointvending.com`) || Host(`www.pointvending.com`)"
+      - "traefik.http.routers.pointvending.entrypoints=websecure"
+      - "traefik.http.routers.pointvending.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pointvending.loadbalancer.server.port=8080"
+      - "traefik.http.routers.pointvending.middlewares=crowdsec@file,security-headers@file,rate-limit@file,compress@file"
+
+  # ── 10. Core-API (Domain Management) ──
+  domain-api:
+    build:
+      context: /opt/mega-stack/core-api
+      dockerfile: Dockerfile
+    image: mega-stack/core-api:v12
+    container_name: domain-api
+    restart: always
+    mem_limit: 256m
+    cpus: 0.25
+    logging: *default-logging
+    environment:
+      - CROWDSEC_API_KEY={{ crowdsec_api_key | default('8ZFH8ElNBpKTRvf1z1U6p3zDmJroZMAFt1MZsNao4AY') }}
+    volumes:
+      - /opt/mega-stack:/opt/mega-stack
+      - /opt/backup-center:/opt/backup-center
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.config/rclone:/root/.config/rclone:ro
+      - /opt/mega-stack/web:/var/www/vhosts
+      - /var/log:/var/log/host:ro
+      - /opt/stack-memory:/opt/stack-memory
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.domain-api.rule=Host(`dashboard.{{ domain }}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.domain-api.entrypoints=websecure"
+      - "traefik.http.routers.domain-api.tls=true"
+      - "traefik.http.routers.domain-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.domain-api.priority=20"
+      - "traefik.http.services.domain-api.loadbalancer.server.port=8888"
+      - "traefik.http.routers.domain-api.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 📊 GRUP 4: İZLEME
+  # ═══════════════════════════════════════════════════════════════
+
+  # ── 11. Netdata ──
+  netdata:
+    image: netdata/netdata:v2.9.0
+    container_name: netdata
+    restart: always
+    hostname: {{ system_name | default('baris-server') }}
+    mem_limit: 512m
+    cpus: 0.5
+    logging: *default-logging
+    cap_add:
+      - SYS_PTRACE
+      - NET_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      - NETDATA_PORT=19999
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.netdata.rule=Host(`monitor.{{ domain }}`)"
+      - "traefik.http.routers.netdata.entrypoints=websecure"
+      - "traefik.http.routers.netdata.tls=true"
+      - "traefik.http.routers.netdata.tls.certresolver=letsencrypt"
+      - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+      - "traefik.http.routers.netdata.priority=10"
+      - "traefik.http.routers.netdata.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ── 12. Uptime Kuma ──
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: always
+    mem_limit: 256m
+    cpus: 0.5
+    logging: *default-logging
+    volumes:
+      - uptime-kuma-data:/app/data
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.uptime.rule=Host(`status.{{ domain }}`)"
+      - "traefik.http.routers.uptime.entrypoints=websecure"
+      - "traefik.http.routers.uptime.tls=true"
+      - "traefik.http.routers.uptime.tls.certresolver=letsencrypt"
+      - "traefik.http.services.uptime.loadbalancer.server.port=3001"
+      - "traefik.http.routers.uptime.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ── 13. Dozzle ──
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: always
+    mem_limit: 128m
+    cpus: 0.25
+    logging: *default-logging
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.dozzle.rule=Host(`logs.{{ domain }}`)"
+      - "traefik.http.routers.dozzle.entrypoints=websecure"
+      - "traefik.http.routers.dozzle.tls=true"
+      - "traefik.http.routers.dozzle.tls.certresolver=letsencrypt"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+      - "traefik.http.routers.dozzle.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ── 14. Portainer ──
+  portainer:
+    image: portainer/portainer-ce:2.39.0
+    container_name: portainer
+    restart: always
+    mem_limit: 256m
+    cpus: 0.5
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      disable: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./portainer_data:/data
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.{{ domain }}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls=true"
+      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ── 15. CloudBeaver ──
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: always
+    mem_limit: 1g
+    cpus: 1.0
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8978/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - ./cloudbeaver_data:/opt/cloudbeaver/workspace
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.db.rule=Host(`db.{{ domain }}`)"
+      - "traefik.http.routers.db.entrypoints=websecure"
+      - "traefik.http.routers.db.tls.certresolver=letsencrypt"
+      - "traefik.http.services.db.loadbalancer.server.port=8978"
+      - "traefik.http.routers.db.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+
+  # ── 16. Watchtower ──
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: watchtower
+    restart: always
+    mem_limit: 64m
+    cpus: 0.25
+    logging: *default-logging
+    environment:
+      - WATCHTOWER_MONITOR_ONLY=true
+      - WATCHTOWER_SCHEDULE=0 0 6 * * *
+      - WATCHTOWER_CLEANUP=false
+      - DOCKER_API_VERSION=1.40
+      - TZ={{ timezone | default('Europe/Istanbul') }}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # ═══════════════════════════════════════════════════════════════
+  # 🧠 GRUP 5: AI / ZEKA (Tier koşullu — Professional ve Enterprise)
+  # ═══════════════════════════════════════════════════════════════
+{% if 'mariadb' in allowed_services %}
+
+  # ── MariaDB ──
+  mariadb:
+    image: mariadb:11.4
+    container_name: mariadb
+    restart: always
+    mem_limit: 1g
+    cpus: 1.0
+    logging: *default-logging
+    environment:
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/iredmail_mysql_root_password
+    secrets:
+      - iredmail_mysql_root_password
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - webnet
+{% endif %}
+{% if 'stack-ai' in allowed_services %}
+
+  # ── STACK-AI (Yapay Zeka Motoru) ──
+  stack-ai:
+    image: barisgelebek/stack-ai:latest
+    container_name: stack-ai
+    restart: always
+{% if tier == 'Enterprise' %}
+    mem_limit: 2g
+    cpus: 4.0
+{% elif tier == 'Professional' %}
+    mem_limit: 1g
+    cpus: 2.0
+{% else %}
+    mem_limit: 512m
+    cpus: 0.5
+{% endif %}
+    logging: *default-logging
+    environment:
+      - AI_MODE={{ ai_mode | default('hybrid') }}
+      - TZ={{ timezone | default('Europe/Istanbul') }}
+    env_file:
+      - ./secrets/ai_tokens.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - /opt/mega-stack/data:/opt/mega-stack/data
+    networks:
+      - webnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=mega-stack_webnet"
+      - "traefik.http.routers.stack-ai.rule=Host(`ai.{{ domain }}`)"
+      - "traefik.http.routers.stack-ai.entrypoints=websecure"
+      - "traefik.http.routers.stack-ai.tls=true"
+      - "traefik.http.routers.stack-ai.tls.certresolver=letsencrypt"
+      - "traefik.http.services.stack-ai.loadbalancer.server.port=8080"
+      - "traefik.http.routers.stack-ai.middlewares=crowdsec@file,authelia@docker,security-headers@file,rate-limit@file"
+{% endif %}
+{% if 'masking-engine' in allowed_services %}
+
+  # ── MaskingEngine (Kervan Kalkanı — Veri Anonimleştirme) ──
+  masking-engine:
+    image: barisgelebek/masking-engine:latest
+    container_name: masking-engine
+    restart: always
+{% if tier == 'Enterprise' %}
+    mem_limit: 1g
+    cpus: 2.0
+{% elif tier == 'Professional' %}
+    mem_limit: 512m
+    cpus: 1.0
+{% else %}
+    mem_limit: 256m
+    cpus: 0.25
+{% endif %}
+    logging: *default-logging
+    environment:
+{% if tier == 'Enterprise' %}
+      - MASKING_ENGINE_MODE=enterprise
+      - MAX_WORKERS=16
+      - DATA_RETENTION=365d
+{% elif tier == 'Professional' %}
+      - MASKING_ENGINE_MODE=standard
+      - MAX_WORKERS=8
+      - DATA_RETENTION=30d
+{% else %}
+      - MASKING_ENGINE_MODE=minimal
+      - MAX_WORKERS=2
+      - DATA_RETENTION=7d
+{% endif %}
+      - TZ={{ timezone | default('Europe/Istanbul') }}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - /opt/mega-stack/data:/opt/mega-stack/data
+    networks:
+      - webnet
+{% endif %}
+{% if 'neural-core' in allowed_services %}
+
+  # ── NeuralCore (Merkezi Sinir Sistemi — Anomali Algılama) ──
+  neural-core:
+    image: barisgelebek/neural-core:latest
+    container_name: neural-core
+    restart: always
+{% if tier == 'Enterprise' %}
+    mem_limit: 1g
+    cpus: 1.0
+{% elif tier == 'Professional' %}
+    mem_limit: 512m
+    cpus: 0.5
+{% else %}
+    mem_limit: 256m
+    cpus: 0.25
+{% endif %}
+    logging: *default-logging
+    environment:
+      - SNAPSHOT_INTERVAL=300
+      - TZ={{ timezone | default('Europe/Istanbul') }}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - /opt/mega-stack/data:/opt/mega-stack/data
+    networks:
+      - webnet
+{% endif %}
+
+networks:
+  webnet:
+    name: mega-stack_webnet
+
+volumes:
+  netdataconfig:
+  netdatalib:
+  netdatacache:
+  uptime-kuma-data:
+  crowdsec-db:
+  crowdsec-config:
+  traefik-logs:
+{% if 'mariadb' in allowed_services %}
+  mariadb-data:
+{% endif %}

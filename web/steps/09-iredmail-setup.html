@@ -1,0 +1,61 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 09: iRedMail Setup — Mail Server (Postmaster, MariaDB Init)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">09</div>
+        <div>
+            <h2>iRedMail — E-posta Sunucusu</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Postfix, Dovecot, MariaDB, Amavis, SpamAssassin — tam e-posta çözümü
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--danger); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            📧 iRedMail, en karmaşık konteynerdir. İlk başlatma <strong>3-5 dakika</strong> sürebilir.
+            Amavisd override dosyası otomatik kontrol edilir (KIRMIZI ÇİZGİ).
+            5 adet secret dosyası Docker mount olarak bağlanır.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">iredmail</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Portlar</div>
+            <div style="font-weight:700;">25, 587, 993</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">💾 Veri</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step09-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step09-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('09', this)" id="step09-deploy-btn">
+            🚀 iRedMail Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep09() { console.log('[Step 09] iRedMail setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep09); } else { initStep09(); }
+</script>

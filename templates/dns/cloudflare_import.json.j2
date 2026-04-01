@@ -1,0 +1,133 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   MEGA-STACK v2.5 — Cloudflare DNS Import Dosyası (Jinja2)
+   dns_generator.py tarafından render edilir.
+   Cloudflare Dashboard → DNS → Import ile kullanılır.
+   ═══════════════════════════════════════════════════════════════════════ #}
+{
+  "success": true,
+  "result": [
+    {
+      "type": "A",
+      "name": "{{ domain }}",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "MEGA-STACK root domain"
+    },
+    {
+      "type": "A",
+      "name": "www",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "www redirect"
+    },
+    {
+      "type": "A",
+      "name": "traefik",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Traefik dashboard"
+    },
+    {
+      "type": "A",
+      "name": "auth",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Authelia SSO"
+    },
+    {
+      "type": "A",
+      "name": "dashboard",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Core-API dashboard"
+    },
+    {
+      "type": "A",
+      "name": "db",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "CloudBeaver DB UI"
+    },
+    {
+      "type": "A",
+      "name": "monitor",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Netdata monitoring"
+    },
+    {
+      "type": "A",
+      "name": "status",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Uptime Kuma"
+    },
+    {
+      "type": "A",
+      "name": "logs",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Dozzle log viewer"
+    },
+    {
+      "type": "A",
+      "name": "portainer",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Portainer container mgmt"
+    },
+    {
+      "type": "A",
+      "name": "mail",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": false,
+      "comment": "iRedMail SMTP/IMAP"
+    },
+    {
+      "type": "MX",
+      "name": "{{ domain }}",
+      "content": "mail.{{ domain }}",
+      "priority": 10,
+      "ttl": 1,
+      "proxied": false,
+      "comment": "Mail exchange record"
+    },
+    {
+      "type": "TXT",
+      "name": "{{ domain }}",
+      "content": "v=spf1 mx a ip4:{{ server_ip }} ~all",
+      "ttl": 1,
+      "proxied": false,
+      "comment": "SPF record"
+    },
+    {
+      "type": "TXT",
+      "name": "_dmarc",
+      "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@{{ domain }}",
+      "ttl": 1,
+      "proxied": false,
+      "comment": "DMARC policy"
+    }
+{%- for extra in extra_domains | default([]) %},
+    {
+      "type": "A",
+      "name": "{{ extra.subdomain | default(extra.domain) }}",
+      "content": "{{ server_ip }}",
+      "ttl": 1,
+      "proxied": {{ 'true' if extra.proxied | default(true) else 'false' }},
+      "comment": "{{ extra.comment | default('Extra domain') }}"
+    }
+{%- endfor %}
+  ]
+}

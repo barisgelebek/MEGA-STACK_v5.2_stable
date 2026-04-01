@@ -1,0 +1,187 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 19: AI & Telegram API — Token Yapılandırması
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">19</div>
+        <div>
+            <h2>AI & Telegram API</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Gemini, Groq ve Telegram Bot entegrasyonu
+            </p>
+        </div>
+    </div>
+
+    <!-- Bilgilendirme -->
+    <div class="card" style="border-left:3px solid var(--primary); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🤖 AI ve bildirim entegrasyonları isteğe bağlıdır.
+            Atlamak için doğrudan <strong>"Devam Et"</strong> butonuna tıklayın.
+        </p>
+    </div>
+
+    <!-- Gemini API Key -->
+    <div class="form-group">
+        <label for="step19-gemini-key">Gemini API Key</label>
+        <div style="position:relative;">
+            <input type="password" id="step19-gemini-key" class="form-control" placeholder="AIzaSy..." maxlength="256"
+                autocomplete="off">
+            <button type="button" class="copy-btn" onclick="step19ToggleVisibility('step19-gemini-key')"
+                style="position:absolute; right:8px; top:50%; transform:translateY(-50%);"
+                title="Göster/Gizle">👁️</button>
+        </div>
+        <div class="form-hint">Google AI Studio'dan alınan API anahtarı (AIzaSy ile başlamalı)</div>
+        <div id="step19-gemini-validation" class="form-hint" style="color:var(--danger);display:none;"></div>
+    </div>
+
+    <!-- Groq API Key -->
+    <div class="form-group">
+        <label for="step19-groq-key">Groq API Key</label>
+        <div style="position:relative;">
+            <input type="password" id="step19-groq-key" class="form-control" placeholder="gsk_..." maxlength="256"
+                autocomplete="off">
+            <button type="button" class="copy-btn" onclick="step19ToggleVisibility('step19-groq-key')"
+                style="position:absolute; right:8px; top:50%; transform:translateY(-50%);"
+                title="Göster/Gizle">👁️</button>
+        </div>
+        <div class="form-hint">Groq Console'dan alınan API anahtarı (gsk_ ile başlamalı)</div>
+        <div id="step19-groq-validation" class="form-hint" style="color:var(--danger);display:none;"></div>
+    </div>
+
+    <!-- Telegram Bot Token -->
+    <div class="form-group">
+        <label for="step19-telegram-token">Telegram Bot Token</label>
+        <div style="position:relative;">
+            <input type="password" id="step19-telegram-token" class="form-control"
+                placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz..." maxlength="256" autocomplete="off">
+            <button type="button" class="copy-btn" onclick="step19ToggleVisibility('step19-telegram-token')"
+                style="position:absolute; right:8px; top:50%; transform:translateY(-50%);"
+                title="Göster/Gizle">👁️</button>
+        </div>
+        <div class="form-hint">@BotFather üzerinden alınan bot token'ı</div>
+    </div>
+
+    <!-- Telegram Chat ID -->
+    <div class="form-group">
+        <label for="step19-telegram-chatid">Telegram Chat ID</label>
+        <input type="text" id="step19-telegram-chatid" class="form-control" placeholder="-1001234567890" maxlength="64"
+            autocomplete="off">
+        <div class="form-hint">Bildirimlerin gönderileceği grup/kanal ID'si</div>
+    </div>
+
+    <!-- Durum Mesajı -->
+    <div id="step19-status" class="card" style="display:none; padding:12px; margin-top:16px;"></div>
+
+    <!-- Butonlar -->
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="step19SaveTokens()" id="step19-save-btn">
+            💾 Token'ları Kaydet
+        </button>
+        <button class="btn" onclick="step19Skip()" style="background:var(--bg-tertiary); color:var(--text-primary);">
+            Atla & Devam Et ➔
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep19() {
+        // Sayfa yüklendiğinde mevcut durumu kontrol et
+        console.log('[Step 19] AI & Telegram API yapılandırma sayfası yüklendi.');
+    }
+
+    function step19ToggleVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function step19ValidateInputs() {
+        let valid = true;
+
+        const geminiKey = document.getElementById('step19-gemini-key').value.trim();
+        const groqKey = document.getElementById('step19-groq-key').value.trim();
+        const geminiMsg = document.getElementById('step19-gemini-validation');
+        const groqMsg = document.getElementById('step19-groq-validation');
+
+        geminiMsg.style.display = 'none';
+        groqMsg.style.display = 'none';
+
+        if (geminiKey && !geminiKey.startsWith('AIzaSy')) {
+            geminiMsg.textContent = 'Gemini API key "AIzaSy" ile başlamalıdır.';
+            geminiMsg.style.display = 'block';
+            valid = false;
+        }
+
+        if (groqKey && !groqKey.startsWith('gsk_')) {
+            groqMsg.textContent = 'Groq API key "gsk_" ile başlamalıdır.';
+            groqMsg.style.display = 'block';
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    async function step19SaveTokens() {
+        if (!step19ValidateInputs()) return;
+
+        const btn = document.getElementById('step19-save-btn');
+        const statusDiv = document.getElementById('step19-status');
+        btn.disabled = true;
+        btn.textContent = '⏳ Kaydediliyor...';
+
+        const payload = {
+            gemini_key: document.getElementById('step19-gemini-key').value.trim() || null,
+            groq_key: document.getElementById('step19-groq-key').value.trim() || null,
+            telegram_token: document.getElementById('step19-telegram-token').value.trim() || null,
+            telegram_chat_id: document.getElementById('step19-telegram-chatid').value.trim() || null,
+        };
+
+        // En az bir alan doldurulmuş mu?
+        const hasAny = Object.values(payload).some(v => v !== null);
+        if (!hasAny) {
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<span style="color:var(--warning);">⚠️ Hiçbir token girilmedi. Atlamak için "Atla & Devam Et" butonunu kullanın.</span>';
+            btn.disabled = false;
+            btn.textContent = '💾 Token\'ları Kaydet';
+            return;
+        }
+
+        try {
+            const result = await WizardAPI.request('/api/install/save-ai-tokens', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            if (result.success) {
+                const data = result.data;
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = '<span style="color:var(--success);">✔ Token\'lar başarıyla kaydedildi: ' +
+                    WizardCore.escapeHtml(data.saved.join(', ')) + '</span>';
+                btn.textContent = '✔ Kaydedildi';
+
+                // 2 saniye sonra otomatik ilerle
+                setTimeout(() => {
+                    WizardCore.nextStep();
+                }, 2000);
+            } else {
+                throw new Error(result.error || 'Kayıt hatası');
+            }
+        } catch (err) {
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<span style="color:var(--danger);">✘ Hata: ' + WizardCore.escapeHtml(err.message) + '</span>';
+            btn.disabled = false;
+            btn.textContent = '💾 Token\'ları Kaydet';
+        }
+    }
+
+    function step19Skip() {
+        console.log('[Step 19] AI token yapılandırması atlandı.');
+        WizardCore.nextStep();
+    }
+
+    // Sayfa yüklendiğinde init
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStep19);
+    } else {
+        initStep19();
+    }
+</script>

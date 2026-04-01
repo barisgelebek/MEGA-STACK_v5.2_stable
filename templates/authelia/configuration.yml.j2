@@ -1,0 +1,84 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   MEGA-STACK v2.5 — Authelia Configuration Template (Jinja2)
+   Hedef: /opt/mega-stack/security/authelia/configuration.yml
+   Değişkenler: domain, admin_email, smtp_password
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+server:
+  address: 'tcp://0.0.0.0:9091'
+  asset_path: '/config/assets'
+  buffers:
+    read: 4096
+    write: 4096
+
+theme: dark
+
+log:
+  level: info
+  format: text
+
+# ── TOTP (Google Authenticator / Authy) ──
+totp:
+  disable: false
+  issuer: '{{ domain }}'
+  algorithm: SHA1
+  digits: 6
+  period: 30
+
+# ── Brute-force koruması ──
+regulation:
+  max_retries: 5
+  find_time: 120
+  ban_time: 300
+
+storage:
+  local:
+    path: /config/db.sqlite3
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2id
+      iterations: 3
+      memory: 65536
+      parallelism: 4
+      salt_length: 16
+      key_length: 32
+
+access_control:
+  default_policy: deny
+  rules:
+    # Admin panelleri: 2FA zorunlu
+    - domain:
+        - 'portainer.{{ domain }}'
+        - 'db.{{ domain }}'
+        - 'monitor.{{ domain }}'
+        - 'traefik.{{ domain }}'
+        - 'logs.{{ domain }}'
+        - 'status.{{ domain }}'
+        - 'auth.{{ domain }}'
+        - 'dashboard.{{ domain }}'
+      policy: two_factor
+
+    # Genel alt domainler: tek faktör
+    - domain: '*.{{ domain }}'
+      policy: one_factor
+
+session:
+  name: authelia_session
+  cookies:
+    - domain: '{{ domain }}'
+      authelia_url: 'https://auth.{{ domain }}'
+  expiration: 3600
+  inactivity: 900
+  remember_me: 2592000
+
+notifier:
+  smtp:
+    address: 'smtp://iredmail:587'
+    username: 'postmaster@{{ domain }}'
+    sender: 'postmaster@{{ domain }}'
+    subject: '[MEGA-STACK Admin] {title}'
+    tls:
+      skip_verify: true

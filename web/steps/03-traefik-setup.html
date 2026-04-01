@@ -1,0 +1,64 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 03: Traefik Setup — Reverse Proxy & SSL Initial
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">03</div>
+        <div>
+            <h2>Traefik — Reverse Proxy & SSL</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Let's Encrypt otomatik SSL, HTTP→HTTPS yönlendirme, Dashboard
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--primary); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🛡️ Traefik, tüm servislerin önünde çalışan reverse proxy katmanıdır.
+            SSL sertifikaları Let's Encrypt üzerinden otomatik alınır.
+            <strong>acme.json izni 600 olmalıdır</strong> (KIRMIZI ÇİZGİ).
+        </p>
+    </div>
+
+    <!-- Servis Bilgisi -->
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">traefik</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Portlar</div>
+            <div style="font-weight:700;">80, 443</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">🛡️ Güvenlik</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step03-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <!-- Deploy Log -->
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step03-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <!-- Butonlar -->
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('03', this)" id="step03-deploy-btn">
+            🚀 Traefik Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep03() { console.log('[Step 03] Traefik setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep03); } else { initStep03(); }
+</script>

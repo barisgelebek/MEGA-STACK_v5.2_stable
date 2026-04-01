@@ -1,0 +1,60 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 07: CertDumper Setup — Certificate Export & Path Config
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">07</div>
+        <div>
+            <h2>CertDumper — Sertifika Dışa Aktarım</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Traefik acme.json'dan PEM sertifikalarını ayrıştırma
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--primary); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            📜 CertDumper, Traefik'in acme.json dosyasından SSL sertifikalarını PEM formatında
+            çıkarır. iRedMail ve diğer servisler bu sertifikaları doğrudan kullanır.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">cert-dumper</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">—</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">🛡️ Güvenlik</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step07-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step07-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('07', this)" id="step07-deploy-btn">
+            🚀 CertDumper Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep07() { console.log('[Step 07] CertDumper setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep07); } else { initStep07(); }
+</script>

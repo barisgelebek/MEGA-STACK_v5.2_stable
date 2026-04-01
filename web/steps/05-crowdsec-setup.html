@@ -1,0 +1,60 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 05: CrowdSec Setup — IPS & Firewall Katmanı
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">05</div>
+        <div>
+            <h2>CrowdSec — IPS & Firewall</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Topluluk tabanlı tehdit istihbaratı, otomatik IP engelleme
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--warning); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🛡️ CrowdSec, log analizi yaparak saldırı kalıplarını tespit eder ve
+            topluluk istihbarat ağı üzerinden bilinen kötü niyetli IP'leri otomatik engeller.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">crowdsec</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">8080</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">🛡️ Güvenlik</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step05-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step05-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('05', this)" id="step05-deploy-btn">
+            🚀 CrowdSec Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep05() { console.log('[Step 05] CrowdSec setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep05); } else { initStep05(); }
+</script>

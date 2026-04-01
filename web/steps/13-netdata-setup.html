@@ -1,0 +1,61 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 13: Netdata — Gerçek Zamanlı Sunucu İzleme
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">13</div>
+        <div>
+            <h2>Netdata — Sunucu İzleme</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                CPU, RAM, Disk, Network — gerçek zamanlı metrik & alarm sistemi
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--success); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            📊 Netdata, tüm sunucu metriklerini toplayarak web arayüzü üzerinden sunar.
+            Docker container metrikleri için <code>/var/run/docker.sock</code> mount edilir.
+            Traefik üzerinden <code>netdata.{{ domain }}</code> adresinde erişilebilir.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">netdata</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">19999</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">📊 İzleme</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step13-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step13-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('13', this)" id="step13-deploy-btn">
+            🚀 Netdata Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep13() { console.log('[Step 13] Netdata setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep13); } else { initStep13(); }
+</script>

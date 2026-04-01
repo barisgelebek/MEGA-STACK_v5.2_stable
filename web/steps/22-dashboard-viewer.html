@@ -1,0 +1,1080 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MEGA-STACK v2.5 — Dashboard Viewer (ReadOnly) + Kurulum Özeti
+     Versions, Components ve Documentation sayfalarını Salt Okunur gösterir.
+     Kurulum Özeti — Final onay öncesi tüm kritik verileri özetler.
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">📊</div>
+        <div>
+            <h2>Dashboard Viewer <span
+                    style="font-size:0.7rem; background:rgba(234,179,8,0.2); color:var(--health-yellow); padding:2px 8px; border-radius:4px; margin-left:8px;">🔒
+                    SALT OKUNUR</span></h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Kurulum özeti, versiyon tarihçesi, bileşen kataloğu ve dokümantasyon.
+            </p>
+        </div>
+    </div>
+
+    <!-- Tab Navigasyon -->
+    <div class="viewer-tabs" id="viewerTabs">
+        <button class="viewer-tab active" data-tab="summary" onclick="switchViewerTab('summary')">
+            ✅ Kurulum Özeti
+        </button>
+        <button class="viewer-tab" data-tab="versions" onclick="switchViewerTab('versions')">
+            📋 Versiyon Tarihçesi
+        </button>
+        <button class="viewer-tab" data-tab="components" onclick="switchViewerTab('components')">
+            🧩 Bileşen Kataloğu
+        </button>
+        <button class="viewer-tab" data-tab="docs" onclick="switchViewerTab('docs')">
+            📖 Dokümantasyon
+        </button>
+    </div>
+
+    <!-- ═══ Tab: Kurulum Özeti ═══ -->
+    <div class="viewer-panel" id="panel-summary">
+        <div class="summary-header-banner">
+            <span class="summary-header-icon">🔍</span>
+            <div>
+                <strong>Kurulum Özeti — Final Kontrol</strong>
+                <p style="font-size:0.8rem; margin-top:4px; color:var(--text-secondary);">
+                    Kurulumu tamamlamadan önce aşağıdaki bilgileri doğrulayın.
+                    Hatalı bir veri varsa ✏️ ikonuna tıklayarak ilgili adıma dönebilirsiniz.
+                </p>
+            </div>
+        </div>
+
+        <!-- Dinamik Özet Tablosu -->
+        <div class="viewer-table-wrap" style="margin-top:16px;">
+            <table class="viewer-table" id="summary-table">
+                <thead>
+                    <tr>
+                        <th style="width:30%;">Parametre</th>
+                        <th style="width:45%;">Değer</th>
+                        <th style="width:12%;">Adım</th>
+                        <th style="width:13%; text-align:center;">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="summary-tbody">
+                    <tr>
+                        <td colspan="4" class="loading-cell">
+                            <div class="spinner-sm"></div> Kurulum verileri yükleniyor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Adım Tamamlanma Durumu -->
+        <div id="summary-step-progress" style="margin-top:20px;"></div>
+
+        <!-- Final Onay -->
+        <div class="summary-final-approval" id="summary-approval-section">
+            <div class="summary-approval-box">
+                <label class="summary-checkbox-label" for="step22-final-confirm">
+                    <input type="checkbox" id="step22-final-confirm" onchange="step22UpdateApproval()">
+                    <span>Yukarıdaki tüm bilgilerin doğruluğunu onaylıyorum. Kurulumu tamamlamaya hazırım.</span>
+                </label>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+                <button class="btn btn-primary" id="step22-complete-btn" disabled onclick="step22CompleteLaunch()"
+                    style="flex:1; min-width:220px;">
+                    🚀 Kurulumu Tamamla & Dashboard'a Git
+                </button>
+                <button class="btn btn-secondary" onclick="step22RefreshSummary()" style="min-width:140px;">
+                    🔄 Verileri Yenile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ReadOnly Uyarı Banner (eski tablar için) -->
+    <div class="readonly-banner" id="readonly-banner" style="display:none;">
+        <span class="readonly-icon">🛡️</span>
+        <span>Bu bölüm <strong>Salt Okunur</strong> modundadır. Veriler Dashboard tarafından yönetilir — Wizard
+            üzerinden değişiklik yapılamaz.</span>
+    </div>
+
+    <!-- ═══ Tab: Versions ═══ -->
+    <div class="viewer-panel hidden" id="panel-versions">
+        <div class="viewer-stats" id="versions-stats">
+            <div class="stat-card"><span class="stat-value" id="vs-total">—</span><span class="stat-label">Toplam
+                    Versiyon</span></div>
+            <div class="stat-card"><span class="stat-value" id="vs-stable">—</span><span
+                    class="stat-label">Stable</span></div>
+            <div class="stat-card"><span class="stat-value" id="vs-latest">—</span><span class="stat-label">Son
+                    Versiyon</span></div>
+        </div>
+        <div class="viewer-table-wrap">
+            <table class="viewer-table" id="versions-table">
+                <thead>
+                    <tr>
+                        <th>Versiyon</th>
+                        <th>Başlık</th>
+                        <th>Tarih</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody id="versions-tbody">
+                    <tr>
+                        <td colspan="4" class="loading-cell">
+                            <div class="spinner-sm"></div> Yükleniyor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ Tab: Components ═══ -->
+    <div class="viewer-panel hidden" id="panel-components">
+        <div class="viewer-stats" id="components-stats">
+            <div class="stat-card"><span class="stat-value" id="cs-total">—</span><span class="stat-label">Toplam
+                    Bileşen</span></div>
+            <div class="stat-card"><span class="stat-value" id="cs-active">—</span><span class="stat-label">Aktif</span>
+            </div>
+            <div class="stat-card"><span class="stat-value" id="cs-categories">—</span><span
+                    class="stat-label">Kategori</span></div>
+        </div>
+        <div class="viewer-filter">
+            <select id="comp-category-filter" onchange="loadComponents()">
+                <option value="">Tüm Kategoriler</option>
+            </select>
+        </div>
+        <div class="viewer-table-wrap">
+            <table class="viewer-table" id="components-table">
+                <thead>
+                    <tr>
+                        <th>Bileşen</th>
+                        <th>Kategori</th>
+                        <th>Teknoloji</th>
+                        <th>Durum</th>
+                        <th>Versiyon</th>
+                    </tr>
+                </thead>
+                <tbody id="components-tbody">
+                    <tr>
+                        <td colspan="5" class="loading-cell">
+                            <div class="spinner-sm"></div> Yükleniyor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ Tab: Documentation ═══ -->
+    <div class="viewer-panel hidden" id="panel-docs">
+        <div class="viewer-stats" id="docs-stats">
+            <div class="stat-card"><span class="stat-value" id="ds-total">—</span><span class="stat-label">Toplam
+                    Sayfa</span></div>
+            <div class="stat-card"><span class="stat-value" id="ds-published">—</span><span
+                    class="stat-label">Yayında</span></div>
+            <div class="stat-card"><span class="stat-value" id="ds-categories">—</span><span
+                    class="stat-label">Kategori</span></div>
+        </div>
+        <div class="viewer-table-wrap">
+            <table class="viewer-table" id="docs-table">
+                <thead>
+                    <tr>
+                        <th>Başlık</th>
+                        <th>Kategori</th>
+                        <th>Sıra</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody id="docs-tbody">
+                    <tr>
+                        <td colspan="4" class="loading-cell">
+                            <div class="spinner-sm"></div> Yükleniyor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Doc Preview Panel -->
+        <div class="doc-preview hidden" id="doc-preview">
+            <div class="doc-preview-header">
+                <h3 id="doc-preview-title"></h3>
+                <button class="btn btn-sm btn-secondary" onclick="closeDocPreview()">✕ Kapat</button>
+            </div>
+            <div class="doc-preview-body" id="doc-preview-body"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .viewer-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 16px;
+        border-bottom: 2px solid rgba(59, 130, 246, 0.15);
+        padding-bottom: 0;
+    }
+
+    .viewer-tab {
+        padding: 10px 18px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 500;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+    }
+
+    .viewer-tab:hover {
+        color: var(--text-primary);
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .viewer-tab.active {
+        color: var(--accent-primary);
+        border-bottom-color: var(--accent-primary);
+        background: rgba(59, 130, 246, 0.08);
+    }
+
+    .readonly-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(234, 179, 8, 0.08);
+        border: 1px solid rgba(234, 179, 8, 0.25);
+        border-radius: 8px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        font-size: 0.82rem;
+        color: var(--health-yellow);
+    }
+
+    .readonly-icon {
+        font-size: 1.2rem;
+    }
+
+    .viewer-panel.hidden {
+        display: none;
+    }
+
+    .viewer-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .stat-card {
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+
+    .viewer-table-wrap {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .viewer-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+    }
+
+    .viewer-table th {
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        font-weight: 600;
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        position: sticky;
+        top: 0;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .viewer-table td {
+        padding: 9px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .viewer-table tr:hover td {
+        background: rgba(59, 130, 246, 0.04);
+    }
+
+    .loading-cell {
+        text-align: center;
+        padding: 24px !important;
+        color: var(--text-muted);
+    }
+
+    .spinner-sm {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(59, 130, 246, 0.3);
+        border-top-color: var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .badge-stable {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--health-green);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-unstable {
+        background: rgba(234, 179, 8, 0.15);
+        color: var(--health-yellow);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-active {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--health-green);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-inactive {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--health-red);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-deprecated {
+        background: rgba(107, 114, 128, 0.15);
+        color: var(--text-muted);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-published {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--health-green);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .badge-draft {
+        background: rgba(107, 114, 128, 0.15);
+        color: var(--text-muted);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .viewer-filter {
+        margin-bottom: 12px;
+    }
+
+    .viewer-filter select {
+        background: var(--bg-input);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 0.84rem;
+        cursor: pointer;
+    }
+
+    .doc-row-link {
+        cursor: pointer;
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+
+    .doc-row-link:hover {
+        text-decoration: underline;
+    }
+
+    .doc-preview {
+        margin-top: 16px;
+        background: var(--bg-secondary);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .doc-preview.hidden {
+        display: none;
+    }
+
+    .doc-preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(59, 130, 246, 0.06);
+        border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .doc-preview-header h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--text-heading);
+    }
+
+    .doc-preview-body {
+        padding: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+        font-size: 0.88rem;
+        line-height: 1.7;
+        color: var(--text-primary);
+    }
+
+    .doc-preview-body pre {
+        background: var(--bg-primary);
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 0.82rem;
+    }
+
+    .doc-preview-body code {
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .error-cell {
+        text-align: center;
+        color: var(--health-red);
+        padding: 24px !important;
+    }
+
+    /* ═══ Summary Tab Styles ═══ */
+    .summary-header-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: rgba(59, 130, 246, 0.06);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        padding: 14px 18px;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+    }
+
+    .summary-header-icon {
+        font-size: 1.4rem;
+        line-height: 1;
+    }
+
+    .summary-param-cell {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .summary-value-ok {
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+    }
+
+    .summary-value-empty {
+        color: var(--health-yellow);
+        font-style: italic;
+        font-size: 0.82rem;
+    }
+
+    .summary-value-masked {
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+        letter-spacing: 1px;
+    }
+
+    .summary-step-badge {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent-primary);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .summary-edit-btn {
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 6px;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        color: var(--text-primary);
+    }
+
+    .summary-edit-btn:hover {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: var(--accent-primary);
+        transform: scale(1.1);
+    }
+
+    .summary-final-approval {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 2px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .summary-approval-box {
+        background: rgba(234, 179, 8, 0.06);
+        border: 1px solid rgba(234, 179, 8, 0.2);
+        border-radius: 8px;
+        padding: 14px 18px;
+    }
+
+    .summary-checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+        line-height: 1.5;
+    }
+
+    .summary-checkbox-label input[type="checkbox"] {
+        margin-top: 3px;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent-primary);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    /* Step Progress Bars */
+    .sp-bar-container {
+        display: flex;
+        gap: 3px;
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+    }
+
+    .sp-bar {
+        flex: 1;
+        border-radius: 2px;
+        transition: background 0.3s;
+    }
+
+    .sp-bar.sp-completed {
+        background: var(--health-green);
+    }
+
+    .sp-bar.sp-running {
+        background: var(--accent-primary);
+        animation: pulse-bar 1.5s infinite;
+    }
+
+    .sp-bar.sp-failed {
+        background: var(--health-red);
+    }
+
+    .sp-bar.sp-pending {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    @keyframes pulse-bar {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .sp-legend {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+
+    .sp-legend.sp-completed {
+        background: var(--health-green);
+    }
+
+    .sp-legend.sp-running {
+        background: var(--accent-primary);
+    }
+
+    .sp-legend.sp-failed {
+        background: var(--health-red);
+    }
+
+    .sp-legend.sp-pending {
+        background: rgba(255, 255, 255, 0.1);
+    }
+</style>
+
+<script>
+    (function () {
+        'use strict';
+
+        const PROXY_BASE = '/api/dashboard/proxy';
+
+        // ── Escape HTML ──
+        function esc(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text || '').replace(/[&<>"']/g, c => map[c]);
+        }
+
+        // ── Tab Switch ──
+        window.switchViewerTab = function (tabId) {
+            document.querySelectorAll('.viewer-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.viewer-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
+            document.getElementById(`panel-${tabId}`)?.classList.remove('hidden');
+            // Load data
+            if (tabId === 'versions') loadVersions();
+            else if (tabId === 'components') loadComponents();
+            else if (tabId === 'docs') loadDocs();
+        };
+
+        // ── API Fetch (ReadOnly) ──
+        async function proxyFetch(path) {
+            try {
+                const resp = await fetch(`${PROXY_BASE}/${path}`);
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.detail || `HTTP ${resp.status}`);
+                }
+                return await resp.json();
+            } catch (e) {
+                console.error(`[Viewer] ${path}:`, e.message);
+                return null;
+            }
+        }
+
+        // ═══ VERSIONS ═══
+        async function loadVersions() {
+            const [listData, statsData] = await Promise.all([
+                proxyFetch('versions'),
+                proxyFetch('versions/stats'),
+            ]);
+
+            if (statsData) {
+                document.getElementById('vs-total').textContent = statsData.total ?? '—';
+                document.getElementById('vs-stable').textContent = statsData.stable ?? '—';
+                document.getElementById('vs-latest').textContent = statsData.latest_version ?? '—';
+            }
+
+            const tbody = document.getElementById('versions-tbody');
+            if (!listData?.versions?.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Versiyon verisi bulunamadı.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = listData.versions.map(v => `<tr>
+            <td><strong>${esc(v.version_tag)}</strong></td>
+            <td>${esc(v.title)}</td>
+            <td style="white-space:nowrap;">${esc(v.release_date || '—')}</td>
+            <td><span class="${v.is_stable ? 'badge-stable' : 'badge-unstable'}">${v.is_stable ? '✅ Stable' : '⚠️ Unstable'}</span></td>
+        </tr>`).join('');
+        }
+        window.loadVersions = loadVersions;
+
+        // ═══ COMPONENTS ═══
+        async function loadComponents() {
+            const filterEl = document.getElementById('comp-category-filter');
+            const category = filterEl?.value || '';
+            const query = category ? `components?category=${encodeURIComponent(category)}` : 'components';
+
+            const [listData, statsData] = await Promise.all([
+                proxyFetch(query),
+                proxyFetch('components/stats'),
+            ]);
+
+            if (statsData) {
+                document.getElementById('cs-total').textContent = statsData.total ?? '—';
+                document.getElementById('cs-active').textContent = statsData.active ?? '—';
+                document.getElementById('cs-categories').textContent = statsData.category_count ?? '—';
+            }
+
+            // Kategori filtresini doldur (ilk seferde)
+            if (filterEl && filterEl.options.length <= 1) {
+                const catData = await proxyFetch('components/categories');
+                if (catData?.categories) {
+                    catData.categories.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        filterEl.appendChild(opt);
+                    });
+                }
+            }
+
+            const tbody = document.getElementById('components-tbody');
+            if (!listData?.components?.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Bileşen verisi bulunamadı.</td></tr>';
+                return;
+            }
+
+            const statusBadge = (s) => {
+                if (s === 'active') return '<span class="badge-active">✅ Aktif</span>';
+                if (s === 'inactive') return '<span class="badge-inactive">⛔ İnaktif</span>';
+                return '<span class="badge-deprecated">📦 Deprecated</span>';
+            };
+
+            tbody.innerHTML = listData.components.map(c => `<tr>
+            <td><strong>${esc(c.name)}</strong></td>
+            <td>${esc(c.category)}</td>
+            <td>${esc(c.technology || '—')}</td>
+            <td>${statusBadge(c.status)}</td>
+            <td>${esc(c.version || '—')}</td>
+        </tr>`).join('');
+        }
+        window.loadComponents = loadComponents;
+
+        // ═══ DOCUMENTATION ═══
+        async function loadDocs() {
+            const [treeData, statsData] = await Promise.all([
+                proxyFetch('docs'),
+                proxyFetch('docs/stats'),
+            ]);
+
+            if (statsData) {
+                document.getElementById('ds-total').textContent = statsData.total ?? '—';
+                document.getElementById('ds-published').textContent = statsData.published ?? '—';
+                document.getElementById('ds-categories').textContent = statsData.category_count ?? '—';
+            }
+
+            const tbody = document.getElementById('docs-tbody');
+            if (!treeData?.docs?.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Dokümantasyon verisi bulunamadı.</td></tr>';
+                return;
+            }
+
+            // Flatten tree for table display
+            const rows = [];
+            function flatten(items, depth) {
+                for (const item of items) {
+                    rows.push({ ...item, depth });
+                    if (item.children?.length) flatten(item.children, depth + 1);
+                }
+            }
+            flatten(treeData.docs, 0);
+
+            tbody.innerHTML = rows.map(d => {
+                const indent = '&nbsp;&nbsp;'.repeat(d.depth * 2) + (d.depth > 0 ? '└ ' : '');
+                const slug = d.slug || '';
+                return `<tr>
+                <td>${indent}<a class="doc-row-link" onclick="viewDoc('${esc(slug)}')">${esc(d.title)}</a></td>
+                <td>${esc(d.category || '—')}</td>
+                <td>${d.sort_order ?? '—'}</td>
+                <td><span class="${d.is_published ? 'badge-published' : 'badge-draft'}">${d.is_published ? '✅ Yayında' : '📝 Taslak'}</span></td>
+            </tr>`;
+            }).join('');
+        }
+        window.loadDocs = loadDocs;
+
+        // ── Doc Preview ──
+        window.viewDoc = async function (slug) {
+            if (!slug) return;
+            const data = await proxyFetch(`docs/page?slug=${encodeURIComponent(slug)}`);
+            if (!data?.doc) {
+                if (typeof WizardCore !== 'undefined') WizardCore.showToast('Döküman yüklenemedi.', 'error');
+                return;
+            }
+            const doc = data.doc;
+            document.getElementById('doc-preview-title').textContent = doc.title || slug;
+            // Simple markdown→html (basic)
+            let content = esc(doc.content_md || 'İçerik bulunmuyor.');
+            content = content.replace(/\n/g, '<br>');
+            document.getElementById('doc-preview-body').innerHTML = content;
+            document.getElementById('doc-preview').classList.remove('hidden');
+        };
+
+        window.closeDocPreview = function () {
+            document.getElementById('doc-preview').classList.add('hidden');
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // KURULUM ÖZETİ (Summary View) — step22RenderSummary()
+        // ═══════════════════════════════════════════════════════════════
+
+        /**
+         * Özet tablosundaki satır tanımları.
+         * Her satır: { label, key (state path), stepIndex (düzenle butonu hedefi), formatter? }
+         */
+        const SUMMARY_ROWS = [
+            { label: '📦 Seçilen Paket (Tier)', key: 'tierInfo.tier', stepIndex: 0, fallback: 'Henüz belirlenmedi' },
+            { label: '🌐 Ana Domain', key: 'network.domain', stepIndex: 2, fallback: 'Girilmedi' },
+            { label: '🖥️ Sunucu IP', key: 'network.server_ip', stepIndex: 2, fallback: 'Girilmedi' },
+            {
+                label: '🔒 SSL Modu', key: 'network.ssl_mode', stepIndex: 2, fallback: 'full_strict',
+                formatter: v => ({ full_strict: 'Full (Strict)', full: 'Full', flexible: 'Flexible' }[v] || v)
+            },
+            {
+                label: '🌍 Domain Tipi', key: 'network.domain_type', stepIndex: 2, fallback: 'static',
+                formatter: v => v === 'app' ? 'Type B: App' : 'Type A: Static'
+            },
+            {
+                label: '☁️ Cloudflare Zone ID', key: 'network.cf_zone_id', stepIndex: 2, fallback: 'Girilmedi (Opsiyonel)',
+                formatter: v => v ? (v.substring(0, 8) + '...' + v.substring(v.length - 4)) : null
+            },
+            {
+                label: '📄 DNS Import Onayı', key: 'network.dns_confirmed', stepIndex: 2, fallback: 'Onaylanmadı',
+                formatter: v => v ? '✅ Cloudflare\'e import edildi' : '❌ Henüz onaylanmadı'
+            },
+            {
+                label: '🗄️ MSSQL SA Şifresi', key: '_mssql_sa', stepIndex: 8, fallback: 'Ayarlanmadı',
+                formatter: () => '••••••••  (secrets/mssql_sa_password)', isMasked: true
+            },
+        ];
+
+        /**
+         * State objesinden noktalı key çözümler: 'network.domain' → state.network.domain
+         */
+        function resolveKey(obj, path) {
+            return path.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : null), obj);
+        }
+
+        /**
+         * Ana render fonksiyonu — tüm özet mantığı burada.
+         */
+        async function step22RenderSummary() {
+            const st = (typeof WizardCore !== 'undefined') ? WizardCore.getState() : {};
+            const steps = (typeof WizardCore !== 'undefined') ? WizardCore.getSteps() : [];
+
+            // Backend'den domain config çek (varsa state'i güncelle)
+            try {
+                const dcRes = await WizardAPI.getDomainConfig();
+                if (dcRes.success && dcRes.data) {
+                    const dc = dcRes.data;
+                    if (typeof WizardCore !== 'undefined') {
+                        WizardCore.setNetworkState({
+                            domain: dc.domain || st.network?.domain || '',
+                            server_ip: st.network?.server_ip || '',
+                            domain_type: dc.domain_type || st.network?.domain_type || 'static',
+                            ssl_mode: dc.ssl_mode || st.network?.ssl_mode || 'full_strict',
+                            cf_zone_id: dc.cloudflare_zone_id || st.network?.cf_zone_id || '',
+                        });
+                    }
+                }
+            } catch (_) { /* Backend henüz domain config almamış olabilir */ }
+
+            // State'i yeniden oku (güncellenmiş olabilir)
+            const freshState = (typeof WizardCore !== 'undefined') ? WizardCore.getState() : st;
+
+            // ─ Özet Tablosu ─
+            const tbody = document.getElementById('summary-tbody');
+            tbody.innerHTML = SUMMARY_ROWS.map(row => {
+                let value = row.key === '_mssql_sa' ? null : resolveKey(freshState, row.key);
+                const isEmpty = value === null || value === undefined || value === '';
+                const displayValue = isEmpty
+                    ? row.fallback
+                    : (row.formatter ? (row.formatter(value) || row.fallback) : esc(String(value)));
+                const stepId = String(row.stepIndex).padStart(2, '0');
+                const stepName = steps[row.stepIndex]?.name || `Step ${stepId}`;
+                const valueClass = isEmpty ? 'summary-value-empty' : (row.isMasked ? 'summary-value-masked' : 'summary-value-ok');
+
+                return `<tr>
+                    <td class="summary-param-cell">${row.label}</td>
+                    <td class="${valueClass}">${esc(displayValue)}</td>
+                    <td><span class="summary-step-badge">Step ${stepId}</span></td>
+                    <td style="text-align:center;">
+                        <button class="summary-edit-btn" onclick="step22GoEdit(${row.stepIndex})"
+                                title="${esc(stepName)} adımına git">✏️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // ─ Adım İlerleme Durumu ─
+            renderStepProgress(freshState, steps);
+
+            // ─ Onay checkbox durumunu sıfırla ─
+            const cb = document.getElementById('step22-final-confirm');
+            if (cb) cb.checked = false;
+            step22UpdateApproval();
+        }
+
+        /**
+         * Adım tamamlanma barkodu — görsel ilerleme göstergesi
+         */
+        function renderStepProgress(st, steps) {
+            const container = document.getElementById('summary-step-progress');
+            if (!container) return;
+
+            const totalSteps = steps.length - 1; // Step 22 hariç
+            const completedCount = Object.values(st.steps || {}).filter(s => s.status === 'completed').length;
+
+            let barsHtml = '';
+            for (let i = 0; i < totalSteps; i++) {
+                const info = st.steps?.[i];
+                const status = info?.status || 'pending';
+                let cls = 'sp-pending';
+                if (status === 'completed') cls = 'sp-completed';
+                else if (status === 'running') cls = 'sp-running';
+                else if (status === 'failed') cls = 'sp-failed';
+                barsHtml += `<div class="sp-bar ${cls}" title="Step ${String(i).padStart(2, '0')}: ${esc(steps[i]?.name || '')} — ${status}"></div>`;
+            }
+
+            container.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">
+                        Adım İlerleme Durumu
+                    </span>
+                    <span style="font-size:0.82rem; color:var(--text-muted);">
+                        ${completedCount} / ${totalSteps} tamamlandı
+                    </span>
+                </div>
+                <div class="sp-bar-container">${barsHtml}</div>
+                <div style="display:flex; gap:16px; margin-top:8px; font-size:0.72rem; color:var(--text-muted);">
+                    <span><span class="sp-legend sp-completed"></span> Tamamlandı</span>
+                    <span><span class="sp-legend sp-running"></span> Çalışıyor</span>
+                    <span><span class="sp-legend sp-failed"></span> Başarısız</span>
+                    <span><span class="sp-legend sp-pending"></span> Bekliyor</span>
+                </div>`;
+        }
+
+        /**
+         * Düzenle butonu — ilgili adıma yönlendirir
+         */
+        window.step22GoEdit = function (stepIndex) {
+            if (typeof WizardCore !== 'undefined') {
+                WizardCore.goToStep(stepIndex);
+            }
+        };
+
+        /**
+         * Final onay checkbox değiştiğinde
+         */
+        window.step22UpdateApproval = function () {
+            const cb = document.getElementById('step22-final-confirm');
+            const btn = document.getElementById('step22-complete-btn');
+            if (btn) btn.disabled = !(cb && cb.checked);
+        };
+
+        /**
+         * Kurulumu Tamamla & Dashboard'a Git
+         */
+        window.step22CompleteLaunch = async function () {
+            const btn = document.getElementById('step22-complete-btn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Tamamlanıyor...'; }
+
+            try {
+                // Analytics gönder (best-effort)
+                if (typeof WizardAPI !== 'undefined' && WizardAPI.sendAnalytics) {
+                    await WizardAPI.sendAnalytics();
+                }
+
+                if (typeof WizardCore !== 'undefined') {
+                    WizardCore.showToast('Kurulum tamamlandı! Dashboard\'a yönlendiriliyorsunuz...', 'success');
+                }
+
+                // Dashboard'a yönlendir (domain bilgisi varsa)
+                const st = (typeof WizardCore !== 'undefined') ? WizardCore.getState() : {};
+                const domain = st.network?.domain;
+                if (domain) {
+                    setTimeout(() => {
+                        window.open(`https://dashboard.${domain}`, '_blank');
+                    }, 1500);
+                }
+            } catch (err) {
+                if (typeof WizardCore !== 'undefined') {
+                    WizardCore.showToast('Hata: ' + err.message, 'error');
+                }
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🚀 Kurulumu Tamamla & Dashboard\'a Git'; }
+            }
+        };
+
+        /**
+         * Verileri Yenile butonu
+         */
+        window.step22RefreshSummary = function () {
+            step22RenderSummary();
+            if (typeof WizardCore !== 'undefined') {
+                WizardCore.showToast('Özet verileri yenilendi.', 'success');
+            }
+        };
+
+        // ── Orijinal switchViewerTab'ı override et — readonly banner ve summary yönetimi ──
+        const _origSwitchTab = window.switchViewerTab;
+        window.switchViewerTab = function (tabId) {
+            // Tüm panelleri gizle, tüm tabları passive yap
+            document.querySelectorAll('.viewer-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.viewer-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
+            document.getElementById(`panel-${tabId}`)?.classList.remove('hidden');
+
+            // ReadOnly banner sadece eski tablarda görünsün
+            const roBanner = document.getElementById('readonly-banner');
+            if (roBanner) roBanner.style.display = (tabId === 'summary') ? 'none' : 'flex';
+
+            // Tab'a göre veri yükle
+            if (tabId === 'summary') step22RenderSummary();
+            else if (tabId === 'versions') loadVersions();
+            else if (tabId === 'components') loadComponents();
+            else if (tabId === 'docs') loadDocs();
+        };
+
+        // ── Dependency listener — geri dönüp veri değiştirildiyse özeti güncelle ──
+        if (typeof WizardCore !== 'undefined' && WizardCore.onDependencyUpdate) {
+            WizardCore.onDependencyUpdate(function (payload) {
+                // Summary tabı aktifse otomatik yenile
+                const summaryPanel = document.getElementById('panel-summary');
+                if (summaryPanel && !summaryPanel.classList.contains('hidden')) {
+                    step22RenderSummary();
+                }
+            });
+        }
+
+        // ── Init: Summary tabını varsayılan olarak yükle ──
+        step22RenderSummary();
+    })();
+</script>

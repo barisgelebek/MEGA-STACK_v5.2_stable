@@ -1,0 +1,60 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     Step 04: Authelia Setup — SSO & 2FA Aktivasyonu
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="card fade-in">
+    <div class="step-title">
+        <div class="step-number">04</div>
+        <div>
+            <h2>Authelia — SSO & 2FA</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem;">
+                Merkezi kimlik doğrulama, TOTP (Google Authenticator) ve erişim politikaları
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--primary); padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.85rem; margin:0;">
+            🔐 Authelia, tüm admin panellerine (Portainer, CloudBeaver, Traefik Dashboard vb.)
+            tek noktadan giriş ve iki faktörlü doğrulama sağlar.
+        </p>
+    </div>
+
+    <div
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Konteyner</div>
+            <div style="font-weight:700;">authelia</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Port</div>
+            <div style="font-weight:700;">9091</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Grup</div>
+            <div style="font-weight:700;">🛡️ Güvenlik</div>
+        </div>
+        <div class="card" style="padding:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Durum</div>
+            <div id="step04-health" style="font-weight:700; color:var(--text-muted);">Bekliyor</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Deploy Logları</label>
+        <div id="step04-log"
+            style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:0.8rem; color:var(--text-muted);">
+            Deploy başlatılmayı bekliyor...
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="stepDeploy('04', this)" id="step04-deploy-btn">
+            🚀 Authelia Deploy
+        </button>
+    </div>
+</div>
+
+<script>
+    function initStep04() { console.log('[Step 04] Authelia setup sayfası yüklendi.'); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initStep04); } else { initStep04(); }
+</script>

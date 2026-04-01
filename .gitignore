@@ -1,0 +1,43 @@
+# ─── MEGA-STACK v5.2 Installation Wizard — .gitignore ───────────────────
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+*.db
+
+# ── Environment & Secrets ──
+.env
+.env.*
+!.env.wizard.example
+license/license.key
+license/server.key
+config/secrets.json
+
+# ── Logs ──
+logs/
+*.log
+
+# ── User-Generated Output ──
+output/
+cloudflare_import_*.txt
+cloudflare-import-*.csv
+cloudflare-import-*.json
+
+# ── Backups ──
+backups/
+
+# ── Data (runtime databases) ──
+data/
+
+# ── OS / IDE ──
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
