@@ -179,7 +179,7 @@ MEGA-STACK v5.2 - Ultimate Infrastructure Solutions
 | 6 | **MSSQL Server** | `mssql/server:2022-latest` | İş veritabanı | 2G |
 | 7 | **iRedMail** | `iredmail/mariadb:stable` | Mail + MariaDB | 2G |
 | 8 | **Nginx** | `nginx:1.29-alpine` | Dashboard + statik siteler | 128M |
-| 9 | **PointVending** | `barisgelebek/pointvending:latest` | ASP.NET Core App | 512M |
+| 9 | **NetCore App** | `yourserver/netcoreapp:latest` | ASP.NET Core App | 512M |
 | 10 | **Core API** | `mega-stack/core-api:v12` | FastAPI backend | 512M |
 | 11 | **Redis** | `redis:7-alpine` | Session store + cache | 128M |
 | 12 | **Netdata** | `netdata:v2.9.0` | Sistem izleme | 512M |
@@ -617,7 +617,7 @@ bash /opt/mega-stack/install-backup.sh
 bash /opt/mega-stack/install.sh status
 
 # 4. Dashboard erişimi
-# https://dashboard.barisgelebek.com
+# https://dashboard.mydomain.com
 # → Authelia 2FA → PassHub → Dashboard
 ```
 
@@ -634,7 +634,7 @@ docker restart domain-api-v12
 docker logs <container-name> --tail 50
 
 # Sistem sağlık kontrolü
-curl -s https://dashboard.barisgelebek.com/api/health
+curl -s https://dashboard.mydomain.com/api/health
 
 # MSSQL bağlantı testi
 docker exec mssql-server /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q "SELECT @@VERSION"
@@ -680,7 +680,7 @@ docker exec mssql-server /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q 
 │   ├── core/                       # 11 core modül
 │   ├── middleware/                  # Auth + Studio Guard
 │   └── db.py                       # DatabaseManager
-├── web/barisgelebek.com/dashboard/ # Frontend (34 sayfa)
+├── web/mydomain.com/dashboard/ # Frontend (34 sayfa)
 │   ├── index.html                  # Ana dashboard
 │   ├── static/css/                 # ~10.750+ satır CSS
 │   ├── static/js/                  # ~7.230+ satır JS
@@ -727,4 +727,5 @@ docker exec mssql-server /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q 
 
 *Bu doküman MEGA-STACK v5.3 sistem verileri kullanılarak otomatik oluşturulmuştur.*  
 *Son güncelleme: 04 Nisan 2026*
+Powered by Barış Gelebek | barisgelebek.com
 
