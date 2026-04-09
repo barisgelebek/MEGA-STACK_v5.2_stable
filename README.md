@@ -711,6 +711,76 @@ docker exec mssql-server /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q 
 ```
 
 ---
+## 📝 Kurulum Aşamaları Görselleri:
+
+1- License Auth.
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/00-license-auth.png"/>
+
+2- Identiy & Branding
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/01-identity-branding.png"/>
+
+3- Global DNS Configuration
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/02-global-dns-config.png"/>
+
+4- Treafik Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/03-traefik-setup.png"/>
+
+5- Authelia Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/04-authelia-setup.png"/>
+
+6- CrowdSec Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/05-crowdsec-setup.png"/>
+
+7- Bouncer Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/06-bouncer-setup.png"/>
+
+8- Certificate Dumper Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/07-certdumper-setup.png"/>
+
+9- MSSQL Server Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/08-mssql-setup.png"/>
+
+10- iRedmail Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/09-iredmail-setup.png"/>
+
+11- NGINX Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/10-nginx-setup.png"/>
+
+12- Docker App Setup & Configuration
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/11-yourdockercontainerApp-setup.png"/>
+
+13- Core-Api Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/12-core-api-setup.png"/>
+
+14- Netdata Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/13-netdata-setup.png"/>
+
+15- Uptime Kuma Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/14-uptimekuma-setup.png"/>
+
+16- Dozzle Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/15-dozzle-setup.png"/>
+
+17- Portainer Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/16-portainer-setup.png"/>
+
+18- CloudBeaver Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/17-cloudbeaver-setup.png"/>
+
+19- WatchTower Setup
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/18-watchtower-setup.png"/>
+
+20- AI Telegram Bot API Configuration
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/19-ai-telegram-api.png"/>
+
+21- Hardening Finalize Check-Out
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/20-hardening-finalize.png"/>
+
+22- Success Lounch
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/21-success-launch.png"/>
+
+23- Dashboard Viewer Message
+<img src="https://github.com/barisgelebek/MEGA-STACK_v5.2_stable/blob/main/Installation%20steps%20images/22-dashboard-viewer.png"/>
 
 <p align="center">
   <strong>MEGA-STACK Server v5.3</strong> — Tek Sunucu, Sınırsız Kontrol
